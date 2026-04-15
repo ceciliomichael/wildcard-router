@@ -1,29 +1,12 @@
 # Wildcard Catcher Backend (Go)
 
-Lightweight wildcard subdomain router using Go `net/http` + `httputil.ReverseProxy`.
+Wildcard subdomain router with:
 
-## Current Routes
-
-The server exposes:
-
-- CRUD API: `/api/routes` (API key required)
-- Catch-all wildcard proxy for all other paths
-
-Wildcard proxy behavior:
-
-- Any request with host `<subdomain>.<WILDCARD_BASE_DOMAIN>`:
-  - looks up `subdomain` in `data/routes.json`
-  - if found and enabled, proxies to the route destination
-  - if not found, returns `404`
-- Requests outside the base domain return `404`
-- The proxy forwards `X-Forwarded-Host` and `X-Forwarded-Proto` to upstream apps so they can reconstruct the public hostname and scheme correctly behind tunnels or reverse proxies.
-- Plain HTTP requests to wildcard subdomains are redirected to HTTPS, and secure requests receive an HSTS header.
-
-Status behavior (proxy):
-
-- `404` no matching route
-- `500` registry or proxy configuration error
-- `502` upstream destination unavailable
+- MongoDB-backed routes
+- Account-based login with session cookies
+- Admin user management
+- Owner-scoped route CRUD
+- Reverse proxy routing for enabled wildcard records
 
 ## Run
 
@@ -36,110 +19,75 @@ Default port is `3067`.
 
 ## Environment
 
-Create `backend/.env` from `backend/.env.example`:
+Create `backend/.env`:
 
 ```env
 WILDCARD_BASE_DOMAIN=echosphere.systems
 PORT=3067
-WILDCARD_REGISTRY_PATH=data/routes.json
-ROUTES_API_KEY=replace-with-long-random-secret
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DATABASE=wildcard_catcher
+BOOTSTRAP_ADMIN_USERNAME=main-admin
+BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-strong-password
+BOOTSTRAP_ADMIN_NAME=Main Admin
+SESSION_COOKIE_NAME=wc_session
+SESSION_TTL_HOURS=168
+SESSION_COOKIE_SECURE=false
 TRUST_X_FORWARDED_HOST=true
 ```
 
 Notes:
 
-- `PORT` or `WILDCARD_PORT` can set listen port.
-- If `WILDCARD_REGISTRY_PATH` is omitted, backend falls back to `data/routes.json` or `../data/routes.json`.
-- `ROUTES_API_KEY` is required to access CRUD endpoints.
-- `TRUST_X_FORWARDED_HOST` should be `true` only when behind a trusted proxy/tunnel.
-- Env loading order:
-  - `backend/.env`
-  - `../.env` (repo root)
+- `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` are required on first startup so the initial admin exists.
+- If an admin user already exists in MongoDB, bootstrap credentials may be omitted.
+- `SESSION_COOKIE_SECURE` should be `true` when the admin UI is served over HTTPS.
+- `TRUST_X_FORWARDED_HOST` should be `true` only behind a trusted proxy or tunnel.
 
-## API (CRUD)
+## Data Model
 
-All endpoints require either:
+MongoDB collections:
 
-- `X-API-Key: <ROUTES_API_KEY>`, or
-- `Authorization: Bearer <ROUTES_API_KEY>`
+- `users`
+- `sessions`
+- `routes`
 
-### List Routes
+`routes` are globally unique by subdomain. Admins can view all routes. Standard users can only manage routes they own.
 
-`GET /api/routes`
+## API
 
-### Create Route
+### Auth
 
-`POST /api/routes`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
-```json
-{
-  "subdomain": "portfolio",
-  "destination": "http://localhost:3000",
-  "enabled": true,
-  "note": "optional"
-}
-```
+### Users
 
-### Update Route
+Admin only:
 
-`PUT /api/routes/{id}`
+- `GET /api/users`
+- `POST /api/users`
 
-```json
-{
-  "subdomain": "portfolio",
-  "destination": "http://localhost:3001",
-  "enabled": true,
-  "note": "updated note"
-}
-```
+User creation generates a password server-side and returns it once in the response.
 
-### Delete Route
+### Routes
 
-`DELETE /api/routes/{id}`
+Authenticated:
 
-Response codes:
+- `GET /api/routes`
+- `POST /api/routes`
+- `PUT /api/routes/{id}`
+- `DELETE /api/routes/{id}`
 
-- `200/201` success
-- `204` delete success
-- `400` invalid payload
-- `401` missing/invalid API key
-- `404` route not found
-- `409` duplicate subdomain
+## Proxy Behavior
 
-## Registry File
+Requests to `<subdomain>.<WILDCARD_BASE_DOMAIN>`:
 
-Path example: `backend/data/routes.json`
+- redirect to HTTPS when the incoming request is not secure
+- look up an enabled route in MongoDB
+- proxy traffic to the stored destination
+- return `404` when no enabled subdomain exists
 
-```json
-{
-  "version": 1,
-  "updatedAt": "2026-04-15T12:09:45.525Z",
-  "routes": [
-    {
-      "id": "dfa1e8ff-e726-4365-8dd0-a7cf9078e6fc",
-      "subdomain": "test",
-      "destination": "http://localhost:3000",
-      "enabled": true,
-      "note": "terminal",
-      "createdAt": "2026-04-15T11:15:19.691Z",
-      "updatedAt": "2026-04-15T12:09:45.525Z"
-    }
-  ]
-}
-```
-
-Validation rules:
-
-- `version` must be `1`
-- `destination` must be absolute `http://` or `https://`
-- only `enabled: true` routes are eligible
-
-## Cloudflare Tunnel
-
-Point wildcard and admin hostnames to this backend:
-
-- `admin.yourdomain.com` -> `http://localhost:3067`
-- `*.yourdomain.com` -> `http://localhost:3067`
+The proxy forwards `X-Forwarded-Host` and `X-Forwarded-Proto` to upstream apps.
 
 ## Build
 

@@ -15,7 +15,10 @@ interface RouteTableProps {
   onToggle: (route: Route) => void;
   onDelete: (route: Route) => void;
   onAdd: () => void;
+  onRefresh: () => void;
   isTogglingId: string | null;
+  isRefreshing: boolean;
+  showOwner?: boolean;
 }
 
 type FilterState = "all" | "enabled" | "disabled";
@@ -58,7 +61,10 @@ export function RouteTable({
   onToggle,
   onDelete,
   onAdd,
+  onRefresh,
   isTogglingId,
+  isRefreshing,
+  showOwner = false,
 }: RouteTableProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterState>("all");
@@ -74,7 +80,9 @@ export function RouteTable({
         return (
           r.subdomain.toLowerCase().includes(q) ||
           r.destination.toLowerCase().includes(q) ||
-          (r.note ?? "").toLowerCase().includes(q)
+          (r.note ?? "").toLowerCase().includes(q) ||
+          r.ownerName.toLowerCase().includes(q) ||
+          r.ownerEmail.toLowerCase().includes(q)
         );
       })
       .sort((a, b) => {
@@ -179,13 +187,41 @@ export function RouteTable({
         onChange={setSort}
       />
 
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm"
+        onClick={onRefresh}
+        disabled={isRefreshing}
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={
+            isRefreshing
+              ? { animation: "spin 0.7s linear infinite" }
+              : undefined
+          }
+        >
+          <title>Refresh</title>
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+        Refresh
+      </button>
+
       {/* Add */}
       <button
         type="button"
         className="btn btn-primary btn-sm"
         onClick={onAdd}
         id="add-route"
-        style={{ flexShrink: 0, marginLeft: "auto" }}
+        style={{ flexShrink: 0 }}
       >
         <svg
           width="12"
@@ -258,6 +294,7 @@ export function RouteTable({
                 onEdit={onEdit}
                 onToggle={onToggle}
                 onDelete={onDelete}
+                showOwner={showOwner}
               />
             ))}
           </div>
@@ -285,6 +322,7 @@ export function RouteTable({
                     onEdit={onEdit}
                     onToggle={onToggle}
                     onDelete={onDelete}
+                    showOwner={showOwner}
                   />
                 ))}
               </tbody>
@@ -318,6 +356,7 @@ interface RouteCardProps {
   onEdit: (r: Route) => void;
   onToggle: (r: Route) => void;
   onDelete: (r: Route) => void;
+  showOwner: boolean;
 }
 
 function RouteCard({
@@ -328,10 +367,20 @@ function RouteCard({
   onEdit,
   onToggle,
   onDelete,
+  showOwner,
 }: RouteCardProps) {
   return (
+    /* biome-ignore lint/a11y/useSemanticElements: card selection needs nested action buttons inside, so a semantic button wrapper is not valid here */
     <div
       onClick={() => onSelect(route)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(route);
+        }
+      }}
+      role="button"
+      tabIndex={0}
       style={{
         padding: "1rem",
         borderBottom: "1px solid var(--color-border)",
@@ -341,7 +390,7 @@ function RouteCard({
         cursor: "pointer",
         transition: "background 0.1s",
         borderLeft: isSelected
-          ? `3px solid var(--color-brand)`
+          ? "3px solid var(--color-ink)"
           : "3px solid transparent",
       }}
     >
@@ -398,6 +447,18 @@ function RouteCard({
         {shortDest(route.destination)}
       </div>
 
+      {showOwner && (
+        <div
+          style={{
+            marginBottom: "0.75rem",
+            fontSize: "0.75rem",
+            color: "var(--color-ink-secondary)",
+          }}
+        >
+          Owner: {route.ownerName}
+        </div>
+      )}
+
       {/* Bottom row: time + actions */}
       <div
         style={{
@@ -406,7 +467,6 @@ function RouteCard({
           justifyContent: "space-between",
           gap: "0.5rem",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         <span
           style={{
@@ -421,7 +481,10 @@ function RouteCard({
           <button
             type="button"
             className="btn btn-ghost btn-icon btn-sm"
-            onClick={() => onEdit(route)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit(route);
+            }}
             aria-label={`Edit ${route.subdomain}`}
             id={`edit-card-${route.id}`}
             title="Edit"
@@ -443,7 +506,10 @@ function RouteCard({
           <button
             type="button"
             className="btn btn-ghost btn-icon btn-sm"
-            onClick={() => onToggle(route)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggle(route);
+            }}
             disabled={isToggling}
             aria-label={`${route.enabled ? "Disable" : "Enable"} ${route.subdomain}`}
             id={`toggle-card-${route.id}`}
@@ -496,7 +562,10 @@ function RouteCard({
             type="button"
             className="btn btn-ghost btn-icon btn-sm"
             style={{ color: "var(--color-error)" }}
-            onClick={() => onDelete(route)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(route);
+            }}
             aria-label={`Delete ${route.subdomain}`}
             id={`delete-card-${route.id}`}
             title="Delete"
@@ -533,6 +602,7 @@ interface RouteRowProps {
   onEdit: (r: Route) => void;
   onToggle: (r: Route) => void;
   onDelete: (r: Route) => void;
+  showOwner: boolean;
 }
 
 function RouteRow({
@@ -543,6 +613,7 @@ function RouteRow({
   onEdit,
   onToggle,
   onDelete,
+  showOwner,
 }: RouteRowProps) {
   return (
     <tr
@@ -557,6 +628,17 @@ function RouteRow({
         >
           {route.subdomain}
         </span>
+        {showOwner && (
+          <div
+            style={{
+              marginTop: "0.2rem",
+              fontSize: "0.72rem",
+              color: "var(--color-ink-muted)",
+            }}
+          >
+            {route.ownerName}
+          </div>
+        )}
       </td>
       <td style={{ maxWidth: "200px" }}>
         <span
@@ -589,7 +671,7 @@ function RouteRow({
       <td style={{ whiteSpace: "nowrap", color: "var(--color-ink-muted)" }}>
         {formatRelative(route.updatedAt)}
       </td>
-      <td onClick={(e) => e.stopPropagation()}>
+      <td onMouseDown={(event) => event.stopPropagation()}>
         <div
           style={{
             display: "flex",

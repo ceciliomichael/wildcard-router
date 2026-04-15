@@ -1,5 +1,7 @@
 "use client";
 
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+
 interface ConfirmDialogProps {
   title: string;
   message: string;
@@ -17,12 +19,29 @@ export function ConfirmDialog({
   onCancel,
   isLoading = false,
 }: ConfirmDialogProps) {
+  function handleOverlayKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onCancel();
+    }
+  }
+
   return (
-    <div className="overlay" onClick={onCancel}>
+    /* biome-ignore lint/a11y/useSemanticElements: backdrop click handling needs a non-semantic overlay wrapper */
+    <div
+      className="overlay"
+      onClick={onCancel}
+      onKeyDown={handleOverlayKeyDown}
+      role="button"
+      tabIndex={0}
+    >
       <div
         className="modal"
         style={{ maxWidth: "400px", padding: "1.75rem" }}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
         {/* Icon */}
         <div
@@ -77,7 +96,13 @@ export function ConfirmDialog({
           {message}
         </p>
 
-        <div style={{ display: "flex", gap: "0.625rem", justifyContent: "flex-end" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.625rem",
+            justifyContent: "flex-end",
+          }}
+        >
           <button
             type="button"
             className="btn btn-ghost"

@@ -1,15 +1,17 @@
 "use client";
 
-import { AuthGate } from "../features/auth/AuthGate";
-import { useAuth } from "../features/auth/useAuth";
-import { DashboardShell } from "../features/dashboard/DashboardShell";
+import { AuthenticatedPage } from "../features/dashboard/AuthenticatedPage";
+import { RoutesDashboardPage } from "../features/dashboard/pages/RoutesDashboardPage";
 
 export default function RootPage() {
-  const auth = useAuth();
-
-  if (!auth.isAuthenticated) {
-    return <AuthGate auth={auth} />;
-  }
-
-  return <DashboardShell auth={auth} />;
+  return (
+    <AuthenticatedPage
+      loadingLabel="Loading routes..."
+      redirectAuthenticatedTo={(auth) =>
+        auth.user?.role === "admin" ? "/admin/routes" : null
+      }
+    >
+      {(auth) => <RoutesDashboardPage auth={auth} showOwner={false} />}
+    </AuthenticatedPage>
+  );
 }

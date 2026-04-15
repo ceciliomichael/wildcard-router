@@ -1,15 +1,12 @@
 package proxy
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -18,12 +15,21 @@ import (
 	"wildcard-catcher/internal/registry"
 )
 
+type stubRouteStore struct {
+	routes map[string]registry.Route
+}
+
+func (s stubRouteStore) Lookup(subdomain string) (registry.Route, bool, error) {
+	route, ok := s.routes[subdomain]
+	return route, ok, nil
+}
+
 type capturedRequest struct {
-	Host             string
-	ForwardedHost    string
-	ForwardedProto   string
-	Method           string
-	Path             string
+	Host           string
+	ForwardedHost  string
+	ForwardedProto string
+	Method         string
+	Path           string
 }
 
 func TestHandlerRoutesMultipleSubdomainsConcurrently(t *testing.T) {
@@ -32,24 +38,22 @@ func TestHandlerRoutesMultipleSubdomainsConcurrently(t *testing.T) {
 	firstCapture := newCaptureServer(t, "first-upstream")
 	secondCapture := newCaptureServer(t, "second-upstream")
 
-	registryPath := writeTestRegistry(t, []registry.Route{
-		{
-			ID:          "route-1",
-			Subdomain:   "subdomain1",
-			Destination: firstCapture.URL,
-			Enabled:     true,
-		},
-		{
-			ID:          "route-2",
-			Subdomain:   "subdomain2",
-			Destination: secondCapture.URL,
-			Enabled:     true,
-		},
-	})
-
 	handler := NewHandler(
 		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
-		registry.NewStore(registryPath),
+		stubRouteStore{routes: map[string]registry.Route{
+			"subdomain1": {
+				ID:          "route-1",
+				Subdomain:   "subdomain1",
+				Destination: firstCapture.URL,
+				Enabled:     true,
+			},
+			"subdomain2": {
+				ID:          "route-2",
+				Subdomain:   "subdomain2",
+				Destination: secondCapture.URL,
+				Enabled:     true,
+			},
+		}},
 		log.New(io.Discard, "", 0),
 	)
 
@@ -159,7 +163,7 @@ func TestHandlerRedirectsPlainHTTPSubdomainToHTTPS(t *testing.T) {
 
 	handler := NewHandler(
 		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
-		registry.NewStore(writeTestRegistry(t, nil)),
+		stubRouteStore{routes: map[string]registry.Route{}},
 		log.New(io.Discard, "", 0),
 	)
 
@@ -184,12 +188,14 @@ func TestHandlerSetsHSTSOnSecureSubdomainRequests(t *testing.T) {
 	upstream := newCaptureServer(t, "ok")
 	handler := NewHandler(
 		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
-		registry.NewStore(writeTestRegistry(t, []registry.Route{{
-			ID:          "route-1",
-			Subdomain:   "subdomain1",
-			Destination: upstream.URL,
-			Enabled:     true,
-		}})),
+		stubRouteStore{routes: map[string]registry.Route{
+			"subdomain1": {
+				ID:          "route-1",
+				Subdomain:   "subdomain1",
+				Destination: upstream.URL,
+				Enabled:     true,
+			},
+		}},
 		log.New(io.Discard, "", 0),
 	)
 
@@ -259,32 +265,4 @@ func mustURLHost(t *testing.T, rawURL string) string {
 	}
 
 	return parsed.Host
-}
-
-func writeTestRegistry(t *testing.T, routes []registry.Route) string {
-	t.Helper()
-
-	file := struct {
-		Version   int             `json:"version"`
-		UpdatedAt string          `json:"updatedAt"`
-		Routes    []registry.Route `json:"routes"`
-	}{
-		Version:   1,
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339Nano),
-		Routes:    routes,
-	}
-
-	content, err := json.MarshalIndent(file, "", "  ")
-	if err != nil {
-		t.Fatalf("marshal registry: %v", err)
-	}
-	content = append(content, '\n')
-
-	dir := t.TempDir()
-	path := filepath.Join(dir, "routes.json")
-	if err := os.WriteFile(path, content, 0o644); err != nil {
-		t.Fatalf("write registry: %v", err)
-	}
-
-	return path
 }

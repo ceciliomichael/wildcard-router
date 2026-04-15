@@ -33,7 +33,7 @@ export function getBackendApiBase(): string {
   return `${parsed.origin}${normalizedPath}`;
 }
 
-export function buildBackendRoutesUrl(
+export function buildBackendApiUrl(
   pathSegments: string[],
   search: string,
 ): string {
@@ -42,5 +42,12 @@ export function buildBackendRoutesUrl(
     pathSegments.length > 0
       ? `/${pathSegments.map((part) => encodeURIComponent(part)).join("/")}`
       : "";
-  return `${base}/api/routes${suffix}${search}`;
+  return `${base}/api${suffix}${search}`;
+}
+
+export function buildBackendRoutesUrl(
+  pathSegments: string[],
+  search: string,
+): string {
+  return buildBackendApiUrl(["routes", ...pathSegments], search);
 }

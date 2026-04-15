@@ -1,18 +1,41 @@
 "use client";
 
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { CustomDropdown } from "../../../components/CustomDropdown";
+import type { AuthUser } from "../../auth/types";
+import type { DashboardNavItem } from "../navigation";
+
 interface DashboardTopBarProps {
-  isOffline: boolean;
-  isRefreshing: boolean;
-  onRefresh: () => void;
-  onLogout: () => void;
+  user: AuthUser;
+  currentPath: string;
+  navigation: ReadonlyArray<DashboardNavItem>;
+  actions?: ReactNode;
+  onLogout: () => Promise<void>;
 }
 
 export function DashboardTopBar({
-  isOffline,
-  isRefreshing,
-  onRefresh,
+  user,
+  currentPath,
+  navigation,
+  actions,
   onLogout,
 }: DashboardTopBarProps) {
+  const profileOptions = [
+    {
+      value: "account",
+      label: user.name,
+      description: user.username || user.email || "Account",
+    },
+    {
+      value: "signout",
+      label: "Sign out",
+      description: "End the current session on this device.",
+      tone: "danger" as const,
+    },
+  ];
+  const initial = getInitial(user);
+
   return (
     <header
       style={{
@@ -24,31 +47,29 @@ export function DashboardTopBar({
       }}
     >
       <div
+        className="dashboard-topbar-shell"
         style={{
           maxWidth: "1280px",
           margin: "0 auto",
-          padding: "0.75rem 1rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          padding: "0.9rem 1rem",
+          display: "grid",
           gap: "0.75rem",
-          minWidth: 0,
+          alignItems: "center",
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.625rem",
+            gap: "0.875rem",
             minWidth: 0,
-            flex: 1,
           }}
         >
           <span
             style={{
-              width: "1.875rem",
-              height: "1.875rem",
-              borderRadius: "0.625rem",
+              width: "2.4rem",
+              height: "2.4rem",
+              borderRadius: "0.85rem",
               background: "var(--color-brand)",
               display: "flex",
               alignItems: "center",
@@ -75,10 +96,10 @@ export function DashboardTopBar({
           <div style={{ minWidth: 0 }}>
             <div
               style={{
-                fontWeight: "700",
-                fontSize: "0.9375rem",
+                fontWeight: "800",
+                fontSize: "0.98rem",
                 color: "var(--color-ink)",
-                letterSpacing: "-0.01em",
+                letterSpacing: "-0.02em",
                 lineHeight: 1.2,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -87,151 +108,189 @@ export function DashboardTopBar({
             >
               Wildcard Catcher
             </div>
-            <span className="badge badge-brand dashboard-topbar-admin">
-              Admin
-            </span>
+            <div
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--color-ink-secondary)",
+                marginTop: "0.1rem",
+              }}
+            >
+              {user.role === "admin"
+                ? "Admin control surface"
+                : "Personal route workspace"}
+            </div>
           </div>
         </div>
 
         <div
+          className="dashboard-topbar-nav"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            flexWrap: "wrap",
+          }}
+        >
+          {navigation.map((item) => {
+            const isActive =
+              item.href === "/"
+                ? currentPath === item.href
+                : currentPath.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  isActive
+                    ? "dashboard-topbar-link active"
+                    : "dashboard-topbar-link"
+                }
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div
+          className="dashboard-topbar-actions"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: "0.5rem",
-            flexShrink: 0,
+            gap: "0.625rem",
+            minWidth: 0,
           }}
         >
-          <div
-            className="dashboard-topbar-status"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.35rem",
-              padding: "0.25rem 0.45rem",
-              border: "1px solid var(--color-border)",
-              borderRadius: "9999px",
-              fontSize: "0.6875rem",
-              lineHeight: 1,
-              fontWeight: 600,
-              color: isOffline ? "var(--color-error)" : "var(--color-success)",
-              background: isOffline
-                ? "var(--color-error-bg)"
-                : "var(--color-success-bg)",
-              minHeight: "1.75rem",
-              minWidth: 0,
+          {actions}
+          <CustomDropdown
+            ariaLabel="Profile menu"
+            value="account"
+            options={profileOptions}
+            onChange={(value) => {
+              if (value === "signout") {
+                void onLogout();
+              }
             }}
-          >
-            <span
-              className={
-                isOffline
-                  ? "dashboard-topbar-status-dot dot dot-offline"
-                  : "dashboard-topbar-status-dot dot dot-online"
-              }
-            />
-            <span className="dashboard-topbar-status-text">
-              {isOffline ? "Offline" : "Connected"}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-ghost btn-icon"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            aria-label="Refresh routes"
-            title="Refresh"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={
-                isRefreshing
-                  ? { animation: "spin 0.7s linear infinite" }
-                  : undefined
-              }
-            >
-              <title>Refresh</title>
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm dashboard-topbar-logout"
-            onClick={onLogout}
-            id="logout"
-            aria-label="Logout"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <title>Logout</title>
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            <span>Logout</span>
-          </button>
+            minMenuWidth="15rem"
+            renderTrigger={() => (
+              <div
+                className="dashboard-topbar-profile"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.7rem",
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: "2rem",
+                    height: "2rem",
+                    borderRadius: "999px",
+                    background: "var(--color-brand)",
+                    color: "var(--color-surface)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "0.8rem",
+                    flexShrink: 0,
+                  }}
+                >
+                  {initial}
+                </span>
+                <span
+                  className="dashboard-topbar-profile-copy"
+                  style={{
+                    display: "grid",
+                    minWidth: 0,
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.8125rem",
+                      fontWeight: 700,
+                      color: "var(--color-ink)",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {user.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "var(--color-ink-secondary)",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {user.username || user.email || "Account"}
+                  </span>
+                </span>
+              </div>
+            )}
+          />
         </div>
       </div>
       <style>{`
-        .dashboard-topbar-admin {
-          padding: 0.14rem 0.45rem;
-          line-height: 1.1;
+        .dashboard-topbar-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 2.4rem;
+          padding: 0 0.95rem;
+          border-radius: 999px;
+          border: 1px solid transparent;
+          color: var(--color-ink-secondary);
+          font-size: 0.8125rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
         }
 
-        .dashboard-topbar-status-dot {
-          width: 0.5rem;
-          height: 0.5rem;
+        .dashboard-topbar-link:hover {
+          background: var(--color-brand-lighter);
+          color: var(--color-ink);
         }
 
-        .dashboard-topbar-status-text {
-          white-space: nowrap;
+        .dashboard-topbar-link.active {
+          background: var(--color-brand-light);
+          border-color: var(--color-brand-border);
+          color: var(--color-ink);
+        }
+
+        @media (min-width: 960px) {
+          .dashboard-topbar-shell {
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+          }
+        }
+
+        @media (max-width: 959px) {
+          .dashboard-topbar-nav {
+            order: 3;
+          }
+
+          .dashboard-topbar-actions {
+            justify-content: flex-start;
+          }
         }
 
         @media (max-width: 480px) {
-          .dashboard-topbar-admin {
+          .dashboard-topbar-profile-copy {
             display: none;
-          }
-
-          .dashboard-topbar-status {
-            padding: 0.2rem 0.4rem;
-          }
-
-          .dashboard-topbar-logout {
-            padding: 0 0.7rem;
-          }
-
-          .dashboard-topbar-logout span {
-            display: none;
-          }
-
-          .dashboard-topbar-status-text {
-            display: none;
-          }
-
-          .dashboard-topbar-status-dot {
-            width: 0.4rem;
-            height: 0.4rem;
           }
         }
       `}</style>
     </header>
   );
+}
+
+function getInitial(user: AuthUser): string {
+  const source = user.name.trim() || user.username.trim() || user.email.trim();
+  return source.charAt(0).toUpperCase() || "R";
 }

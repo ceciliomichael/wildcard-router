@@ -1,5 +1,8 @@
 export interface Route {
   id: string;
+  ownerId: string;
+  ownerName: string;
+  ownerEmail: string;
   subdomain: string;
   destination: string;
   enabled: boolean;

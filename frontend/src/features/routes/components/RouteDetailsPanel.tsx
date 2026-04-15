@@ -9,9 +9,16 @@ interface RouteDetailsPanelProps {
   onDelete: (route: Route) => void;
   onClose: () => void;
   isTogglingId: string | null;
+  showOwner?: boolean;
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div
@@ -57,6 +64,7 @@ export function RouteDetailsPanel({
   onDelete,
   onClose,
   isTogglingId,
+  showOwner = false,
 }: RouteDetailsPanelProps) {
   const isToggling = isTogglingId === route.id;
 
@@ -145,7 +153,9 @@ export function RouteDetailsPanel({
         {/* Status badge */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span
-            className={route.enabled ? "badge badge-enabled" : "badge badge-disabled"}
+            className={
+              route.enabled ? "badge badge-enabled" : "badge badge-disabled"
+            }
           >
             <span
               className={`dot ${route.enabled ? "dot-online" : "dot-muted"}`}
@@ -172,20 +182,42 @@ export function RouteDetailsPanel({
               fontFamily: "var(--font-mono)",
               fontSize: "0.8125rem",
             }}
-            onMouseOver={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")
-            }
-            onMouseOut={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")
-            }
+            onMouseOver={(event) => {
+              event.currentTarget.style.textDecoration = "underline";
+            }}
+            onMouseOut={(event) => {
+              event.currentTarget.style.textDecoration = "none";
+            }}
+            onFocus={(event) => {
+              event.currentTarget.style.textDecoration = "underline";
+            }}
+            onBlur={(event) => {
+              event.currentTarget.style.textDecoration = "none";
+            }}
           >
             {route.destination}
           </a>
         </DetailRow>
 
+        {showOwner && (
+          <DetailRow label="Owner">
+            <div style={{ display: "grid", gap: "0.2rem" }}>
+              <span>{route.ownerName}</span>
+              <span
+                className="mono"
+                style={{ color: "var(--color-ink-secondary)" }}
+              >
+                {route.ownerEmail}
+              </span>
+            </div>
+          </DetailRow>
+        )}
+
         {route.note && <DetailRow label="Note">{route.note}</DetailRow>}
 
-        <DetailRow label="Last updated">{formatDate(route.updatedAt)}</DetailRow>
+        <DetailRow label="Last updated">
+          {formatDate(route.updatedAt)}
+        </DetailRow>
         <DetailRow label="Created">{formatDate(route.createdAt)}</DetailRow>
       </div>
 

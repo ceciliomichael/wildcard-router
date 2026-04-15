@@ -13,16 +13,20 @@ import (
 	"wildcard-catcher/internal/registry"
 )
 
+type routeLookupStore interface {
+	Lookup(subdomain string) (registry.Route, bool, error)
+}
+
 type Handler struct {
 	cfg    config.Config
-	store  *registry.Store
+	store  routeLookupStore
 	logger *log.Logger
 
 	mu      sync.RWMutex
 	proxies map[string]*httputil.ReverseProxy
 }
 
-func NewHandler(cfg config.Config, store *registry.Store, logger *log.Logger) *Handler {
+func NewHandler(cfg config.Config, store routeLookupStore, logger *log.Logger) *Handler {
 	return &Handler{
 		cfg:     cfg,
 		store:   store,

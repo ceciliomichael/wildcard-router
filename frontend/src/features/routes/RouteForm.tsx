@@ -1,6 +1,11 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useState,
+} from "react";
 import type { Route, RoutePayload } from "./types";
 
 interface RouteFormProps {
@@ -73,7 +78,8 @@ export function RouteForm({
   const isValid =
     subdomain.trim() !== "" &&
     isDnsSafe(subdomain.trim()) &&
-    (isEditing || !existingSubdomains.includes(subdomain.trim().toLowerCase())) &&
+    (isEditing ||
+      !existingSubdomains.includes(subdomain.trim().toLowerCase())) &&
     isValidUrl(destination.trim());
 
   async function handleSubmit(e: FormEvent) {
@@ -98,9 +104,29 @@ export function RouteForm({
     }
   }
 
+  function handleOverlayKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClose();
+    }
+  }
+
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    /* biome-ignore lint/a11y/useSemanticElements: backdrop click handling needs a non-semantic overlay wrapper */
+    <div
+      className="overlay"
+      onClick={onClose}
+      onKeyDown={handleOverlayKeyDown}
+      role="button"
+      tabIndex={0}
+    >
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         {/* Header */}
         <div
           style={{
@@ -160,7 +186,12 @@ export function RouteForm({
         <form
           onSubmit={handleSubmit}
           noValidate
-          style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.125rem" }}
+          style={{
+            padding: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.125rem",
+          }}
         >
           {error && (
             <div
@@ -202,7 +233,8 @@ export function RouteForm({
           {/* Destination */}
           <div>
             <label htmlFor="route-destination" className="field-label">
-              Destination URL <span style={{ color: "var(--color-error)" }}>*</span>
+              Destination URL{" "}
+              <span style={{ color: "var(--color-error)" }}>*</span>
             </label>
             <input
               id="route-destination"
@@ -265,7 +297,9 @@ export function RouteForm({
           <div>
             <label htmlFor="route-note" className="field-label">
               Note{" "}
-              <span style={{ color: "var(--color-ink-muted)", fontWeight: 400 }}>
+              <span
+                style={{ color: "var(--color-ink-muted)", fontWeight: 400 }}
+              >
                 (optional)
               </span>
             </label>

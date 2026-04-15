@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 export interface DropdownOption<T extends string> {
   label: string;
   value: T;
+  description?: string;
+  tone?: "default" | "danger";
 }
 
 interface CustomDropdownProps<T extends string> {
@@ -12,6 +14,9 @@ interface CustomDropdownProps<T extends string> {
   value: T;
   options: ReadonlyArray<DropdownOption<T>>;
   onChange: (value: T) => void;
+  renderTrigger?: (selected: DropdownOption<T>) => ReactNode;
+  menuAlign?: "left" | "right";
+  minMenuWidth?: string;
 }
 
 export function CustomDropdown<T extends string>({
@@ -19,6 +24,9 @@ export function CustomDropdown<T extends string>({
   value,
   options,
   onChange,
+  renderTrigger,
+  menuAlign = "right",
+  minMenuWidth,
 }: CustomDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -58,7 +66,11 @@ export function CustomDropdown<T extends string>({
         aria-label={ariaLabel}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="custom-dropdown__value">{selected.label}</span>
+        {renderTrigger ? (
+          renderTrigger(selected)
+        ) : (
+          <span className="custom-dropdown__value">{selected.label}</span>
+        )}
         <svg
           viewBox="0 0 20 20"
           width="14"
@@ -80,6 +92,11 @@ export function CustomDropdown<T extends string>({
           className="custom-dropdown__menu"
           role="listbox"
           aria-label={ariaLabel}
+          style={{
+            left: menuAlign === "left" ? 0 : "auto",
+            right: menuAlign === "right" ? 0 : "auto",
+            minWidth: minMenuWidth,
+          }}
         >
           {options.map((option) => {
             const isActive = option.value === value;
@@ -91,15 +108,26 @@ export function CustomDropdown<T extends string>({
                 aria-selected={isActive}
                 className={
                   isActive
-                    ? "custom-dropdown__item active"
-                    : "custom-dropdown__item"
+                    ? option.tone === "danger"
+                      ? "custom-dropdown__item active danger"
+                      : "custom-dropdown__item active"
+                    : option.tone === "danger"
+                      ? "custom-dropdown__item danger"
+                      : "custom-dropdown__item"
                 }
                 onClick={() => {
                   onChange(option.value);
                   setOpen(false);
                 }}
               >
-                {option.label}
+                <span className="custom-dropdown__item-label">
+                  {option.label}
+                </span>
+                {option.description ? (
+                  <span className="custom-dropdown__item-description">
+                    {option.description}
+                  </span>
+                ) : null}
               </button>
             );
           })}

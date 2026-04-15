@@ -2,10 +2,9 @@ import type { ApiError, Route, RoutePayload } from "./types";
 
 const ROUTES_API_PATH = "/api/routes";
 
-function buildHeaders(apiKey: string): Record<string, string> {
+function buildHeaders(): Record<string, string> {
   return {
     "Content-Type": "application/json",
-    "X-API-Key": apiKey,
   };
 }
 
@@ -33,19 +32,11 @@ async function parseError(res: Response): Promise<ApiError> {
   return { message, status: res.status };
 }
 
-export async function validateKey(apiKey: string): Promise<void> {
+export async function listRoutes(): Promise<Route[]> {
   const res = await fetch(ROUTES_API_PATH, {
-    headers: buildHeaders(apiKey),
-  });
-  if (!res.ok) {
-    throw await parseError(res);
-  }
-}
-
-export async function listRoutes(apiKey: string): Promise<Route[]> {
-  const res = await fetch(ROUTES_API_PATH, {
-    headers: buildHeaders(apiKey),
+    headers: buildHeaders(),
     cache: "no-store",
+    credentials: "include",
   });
   if (!res.ok) throw await parseError(res);
   const data = await res.json();
@@ -55,13 +46,11 @@ export async function listRoutes(apiKey: string): Promise<Route[]> {
   return [];
 }
 
-export async function createRoute(
-  apiKey: string,
-  payload: RoutePayload,
-): Promise<Route> {
+export async function createRoute(payload: RoutePayload): Promise<Route> {
   const res = await fetch(ROUTES_API_PATH, {
     method: "POST",
-    headers: buildHeaders(apiKey),
+    credentials: "include",
+    headers: buildHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw await parseError(res);
@@ -69,23 +58,24 @@ export async function createRoute(
 }
 
 export async function updateRoute(
-  apiKey: string,
   id: string,
   payload: RoutePayload,
 ): Promise<Route> {
   const res = await fetch(`${ROUTES_API_PATH}/${encodeURIComponent(id)}`, {
     method: "PUT",
-    headers: buildHeaders(apiKey),
+    credentials: "include",
+    headers: buildHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw await parseError(res);
   return res.json() as Promise<Route>;
 }
 
-export async function deleteRoute(apiKey: string, id: string): Promise<void> {
+export async function deleteRoute(id: string): Promise<void> {
   const res = await fetch(`${ROUTES_API_PATH}/${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers: buildHeaders(apiKey),
+    credentials: "include",
+    headers: buildHeaders(),
   });
   if (!res.ok) throw await parseError(res);
 }

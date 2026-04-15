@@ -3,17 +3,23 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
-	Port               int
-	BaseDomain         string
-	RegistryPath       string
-	APIKey             string
-	TrustForwardedHost bool
+	Port                   int
+	BaseDomain             string
+	MongoURI               string
+	MongoDatabase          string
+	BootstrapAdminUsername string
+	BootstrapAdminPassword string
+	BootstrapAdminName     string
+	SessionCookieName      string
+	SessionHours           int
+	SessionCookieSecure    bool
+	TrustForwardedHost     bool
 }
 
 func (c Config) ListenAddress() string {
@@ -36,30 +42,36 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("WILDCARD_BASE_DOMAIN is required")
 	}
 
-	registryPath := firstNonEmpty(
-		os.Getenv("WILDCARD_REGISTRY_PATH"),
-		"default",
-	)
-	if registryPath == "default" {
-		registryPath = discoverDefaultRegistryPath()
+	mongoURI := strings.TrimSpace(firstNonEmpty(
+		os.Getenv("MONGODB_URI"),
+		"mongodb://localhost:27017",
+	))
+	if mongoURI == "" {
+		return Config{}, fmt.Errorf("MONGODB_URI is required")
 	}
 
-	apiKey := strings.TrimSpace(firstNonEmpty(
-		os.Getenv("ROUTES_API_KEY"),
-		os.Getenv("WILDCARD_API_KEY"),
-	))
-	if apiKey == "" {
-		return Config{}, fmt.Errorf("ROUTES_API_KEY is required")
+	sessionHours, err := parsePositiveInt(
+		firstNonEmpty(os.Getenv("SESSION_TTL_HOURS"), "168"),
+		"SESSION_TTL_HOURS",
+	)
+	if err != nil {
+		return Config{}, err
 	}
 
 	trustForwardedHost := parseBoolDefaultFalse(os.Getenv("TRUST_X_FORWARDED_HOST"))
 
 	return Config{
-		Port:               port,
-		BaseDomain:         baseDomain,
-		RegistryPath:       filepath.Clean(registryPath),
-		APIKey:             apiKey,
-		TrustForwardedHost: trustForwardedHost,
+		Port:                   port,
+		BaseDomain:             baseDomain,
+		MongoURI:               mongoURI,
+		MongoDatabase:          strings.TrimSpace(firstNonEmpty(os.Getenv("MONGODB_DATABASE"), "wildcard_catcher")),
+		BootstrapAdminUsername: strings.TrimSpace(os.Getenv("BOOTSTRAP_ADMIN_USERNAME")),
+		BootstrapAdminPassword: os.Getenv("BOOTSTRAP_ADMIN_PASSWORD"),
+		BootstrapAdminName:     strings.TrimSpace(firstNonEmpty(os.Getenv("BOOTSTRAP_ADMIN_NAME"), "Main Admin")),
+		SessionCookieName:      strings.TrimSpace(firstNonEmpty(os.Getenv("SESSION_COOKIE_NAME"), "wc_session")),
+		SessionHours:           sessionHours,
+		SessionCookieSecure:    parseBoolDefaultFalse(os.Getenv("SESSION_COOKIE_SECURE")),
+		TrustForwardedHost:     trustForwardedHost,
 	}, nil
 }
 
@@ -76,21 +88,6 @@ func parsePort(raw string) (int, error) {
 	return port, nil
 }
 
-func discoverDefaultRegistryPath() string {
-	candidates := []string{
-		filepath.Join("data", "routes.json"),
-		filepath.Join("..", "data", "routes.json"),
-	}
-
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate
-		}
-	}
-
-	return filepath.Join("..", "data", "routes.json")
-}
-
 func normalizeHost(host string) string {
 	value := strings.ToLower(strings.TrimSpace(host))
 	value = strings.TrimSuffix(value, ".")
@@ -98,6 +95,18 @@ func normalizeHost(host string) string {
 		value = value[:colon]
 	}
 	return value
+}
+
+func parsePositiveInt(raw string, label string) (int, error) {
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || value < 1 {
+		return 0, fmt.Errorf("%s must be a positive integer", label)
+	}
+	return value, nil
+}
+
+func (c Config) SessionTTL() time.Duration {
+	return time.Duration(c.SessionHours) * time.Hour
 }
 
 func firstNonEmpty(values ...string) string {

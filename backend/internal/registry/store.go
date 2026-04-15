@@ -1,24 +1,33 @@
 package registry
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
-	"sync"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var subdomainPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$`)
+var (
+	subdomainPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$`)
+
+	ErrDuplicateSubdomain = errors.New("subdomain already exists")
+	ErrRouteNotFound      = errors.New("route not found")
+	ErrRouteForbidden     = errors.New("forbidden")
+)
 
 type Route struct {
 	ID          string `json:"id"`
+	OwnerID     string `json:"ownerId"`
+	OwnerName   string `json:"ownerName"`
+	OwnerEmail  string `json:"ownerEmail"`
 	Subdomain   string `json:"subdomain"`
 	Destination string `json:"destination"`
 	Enabled     bool   `json:"enabled"`
@@ -41,72 +50,112 @@ type UpdateRouteInput struct {
 	Note        string `json:"note"`
 }
 
-type registryFile struct {
-	Version   int     `json:"version"`
-	UpdatedAt string  `json:"updatedAt"`
-	Routes    []Route `json:"routes"`
+type AccessScope struct {
+	UserID  string
+	IsAdmin bool
+}
+
+type OwnerInfo struct {
+	UserID    string
+	UserName  string
+	UserEmail string
 }
 
 type Store struct {
-	path string
-	mu   sync.RWMutex
+	collection *mongo.Collection
 }
 
-func NewStore(path string) *Store {
-	return &Store{path: path}
+type routeRecord struct {
+	ID                  primitive.ObjectID `bson:"_id,omitempty"`
+	OwnerID             primitive.ObjectID `bson:"ownerId"`
+	OwnerName           string             `bson:"ownerName"`
+	OwnerEmail          string             `bson:"ownerEmail"`
+	Subdomain           string             `bson:"subdomain"`
+	NormalizedSubdomain string             `bson:"normalizedSubdomain"`
+	Destination         string             `bson:"destination"`
+	Enabled             bool               `bson:"enabled"`
+	Note                string             `bson:"note"`
+	CreatedAt           time.Time          `bson:"createdAt"`
+	UpdatedAt           time.Time          `bson:"updatedAt"`
+}
+
+func NewStore(db *mongo.Database) *Store {
+	return &Store{collection: db.Collection("routes")}
+}
+
+func (s *Store) EnsureIndexes(ctx context.Context) error {
+	_, err := s.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys:    bson.D{{Key: "normalizedSubdomain", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+		{
+			Keys: bson.D{{Key: "ownerId", Value: 1}, {Key: "updatedAt", Value: -1}},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create route indexes: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) Lookup(subdomain string) (Route, bool, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	registry, err := s.read()
+	var record routeRecord
+	err := s.collection.FindOne(ctx, bson.M{
+		"normalizedSubdomain": normalizeSubdomain(subdomain),
+		"enabled":             true,
+	}).Decode(&record)
 	if err != nil {
-		return Route{}, false, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return Route{}, false, nil
+		}
+		return Route{}, false, fmt.Errorf("lookup route: %w", err)
 	}
 
-	targetSubdomain := normalizeSubdomain(subdomain)
-	for _, route := range registry.Routes {
-		if !route.Enabled {
-			continue
-		}
-		if normalizeSubdomain(route.Subdomain) != targetSubdomain {
-			continue
-		}
-
-		if err := validateDestination(route.Destination); err != nil {
-			return Route{}, false, fmt.Errorf("invalid destination for %q: %w", route.Subdomain, err)
-		}
-
-		return route, true, nil
+	if err := validateDestination(record.Destination); err != nil {
+		return Route{}, false, fmt.Errorf("invalid destination for %q: %w", record.Subdomain, err)
 	}
 
-	return Route{}, false, nil
+	return record.toPublic(), true, nil
 }
 
-func (s *Store) List() ([]Route, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	registry, err := s.read()
+func (s *Store) List(ctx context.Context, scope AccessScope) ([]Route, error) {
+	filter, err := buildScopeFilter(scope)
 	if err != nil {
 		return nil, err
 	}
 
-	routes := slices.Clone(registry.Routes)
-	slices.SortFunc(routes, func(a Route, b Route) int {
-		return strings.Compare(strings.ToLower(a.Subdomain), strings.ToLower(b.Subdomain))
-	})
+	cursor, err := s.collection.Find(ctx, filter, options.Find().SetSort(bson.D{
+		{Key: "updatedAt", Value: -1},
+		{Key: "normalizedSubdomain", Value: 1},
+	}))
+	if err != nil {
+		return nil, fmt.Errorf("find routes: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	routes := make([]Route, 0)
+	for cursor.Next(ctx) {
+		var record routeRecord
+		if err := cursor.Decode(&record); err != nil {
+			return nil, fmt.Errorf("decode route: %w", err)
+		}
+		routes = append(routes, record.toPublic())
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("iterate routes: %w", err)
+	}
+
 	return routes, nil
 }
 
-func (s *Store) Create(input CreateRouteInput) (Route, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	registry, err := s.read()
+func (s *Store) Create(ctx context.Context, owner OwnerInfo, input CreateRouteInput) (Route, error) {
+	ownerID, err := primitive.ObjectIDFromHex(strings.TrimSpace(owner.UserID))
 	if err != nil {
-		return Route{}, err
+		return Route{}, fmt.Errorf("invalid owner id: %w", err)
 	}
 
 	normalized, err := normalizeAndValidateInput(input.Subdomain, input.Destination, input.Note)
@@ -114,44 +163,44 @@ func (s *Store) Create(input CreateRouteInput) (Route, error) {
 		return Route{}, err
 	}
 
-	for _, route := range registry.Routes {
-		if normalizeSubdomain(route.Subdomain) == normalized.subdomain {
-			return Route{}, fmt.Errorf("subdomain %q already exists", normalized.subdomain)
+	now := time.Now().UTC()
+	record := routeRecord{
+		OwnerID:             ownerID,
+		OwnerName:           strings.TrimSpace(owner.UserName),
+		OwnerEmail:          strings.TrimSpace(owner.UserEmail),
+		Subdomain:           normalized.subdomain,
+		NormalizedSubdomain: normalized.subdomain,
+		Destination:         normalized.destination,
+		Enabled:             input.Enabled,
+		Note:                normalized.note,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
+
+	result, err := s.collection.InsertOne(ctx, record)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return Route{}, fmt.Errorf("%w: %s", ErrDuplicateSubdomain, normalized.subdomain)
 		}
+		return Route{}, fmt.Errorf("insert route: %w", err)
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339Nano)
-	newRoute := Route{
-		ID:          newRouteID(),
-		Subdomain:   normalized.subdomain,
-		Destination: normalized.destination,
-		Enabled:     input.Enabled,
-		Note:        normalized.note,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+	insertedID, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return Route{}, fmt.Errorf("unexpected inserted route id type")
 	}
+	record.ID = insertedID
 
-	registry.Routes = append(registry.Routes, newRoute)
-	registry.UpdatedAt = now
-	if err := s.write(registry); err != nil {
-		return Route{}, err
-	}
-
-	return newRoute, nil
+	return record.toPublic(), nil
 }
 
-func (s *Store) Update(id string, input UpdateRouteInput) (Route, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	routeID := strings.TrimSpace(id)
-	if routeID == "" {
-		return Route{}, fmt.Errorf("route id is required")
-	}
-
-	registry, err := s.read()
+func (s *Store) Update(ctx context.Context, scope AccessScope, id string, input UpdateRouteInput) (Route, error) {
+	record, err := s.findByID(ctx, id)
 	if err != nil {
 		return Route{}, err
+	}
+	if !scope.IsAdmin && record.OwnerID.Hex() != strings.TrimSpace(scope.UserID) {
+		return Route{}, ErrRouteForbidden
 	}
 
 	normalized, err := normalizeAndValidateInput(input.Subdomain, input.Destination, input.Note)
@@ -159,111 +208,84 @@ func (s *Store) Update(id string, input UpdateRouteInput) (Route, error) {
 		return Route{}, err
 	}
 
-	routeIndex := -1
-	for index, route := range registry.Routes {
-		if route.ID == routeID {
-			routeIndex = index
-			continue
+	record.Subdomain = normalized.subdomain
+	record.NormalizedSubdomain = normalized.subdomain
+	record.Destination = normalized.destination
+	record.Enabled = input.Enabled
+	record.Note = normalized.note
+	record.UpdatedAt = time.Now().UTC()
+
+	_, err = s.collection.ReplaceOne(ctx, bson.M{"_id": record.ID}, record)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return Route{}, fmt.Errorf("%w: %s", ErrDuplicateSubdomain, normalized.subdomain)
 		}
-		if normalizeSubdomain(route.Subdomain) == normalized.subdomain {
-			return Route{}, fmt.Errorf("subdomain %q already exists", normalized.subdomain)
-		}
+		return Route{}, fmt.Errorf("replace route: %w", err)
 	}
 
-	if routeIndex == -1 {
-		return Route{}, fmt.Errorf("route not found")
-	}
-
-	now := time.Now().UTC().Format(time.RFC3339Nano)
-	current := registry.Routes[routeIndex]
-	current.Subdomain = normalized.subdomain
-	current.Destination = normalized.destination
-	current.Enabled = input.Enabled
-	current.Note = normalized.note
-	current.UpdatedAt = now
-
-	registry.Routes[routeIndex] = current
-	registry.UpdatedAt = now
-	if err := s.write(registry); err != nil {
-		return Route{}, err
-	}
-
-	return current, nil
+	return record.toPublic(), nil
 }
 
-func (s *Store) Delete(id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	routeID := strings.TrimSpace(id)
-	if routeID == "" {
-		return fmt.Errorf("route id is required")
-	}
-
-	registry, err := s.read()
+func (s *Store) Delete(ctx context.Context, scope AccessScope, id string) error {
+	record, err := s.findByID(ctx, id)
 	if err != nil {
 		return err
 	}
-
-	index := -1
-	for i, route := range registry.Routes {
-		if route.ID == routeID {
-			index = i
-			break
-		}
-	}
-	if index == -1 {
-		return fmt.Errorf("route not found")
+	if !scope.IsAdmin && record.OwnerID.Hex() != strings.TrimSpace(scope.UserID) {
+		return ErrRouteForbidden
 	}
 
-	registry.Routes = append(registry.Routes[:index], registry.Routes[index+1:]...)
-	registry.UpdatedAt = time.Now().UTC().Format(time.RFC3339Nano)
-	return s.write(registry)
-}
-
-func (s *Store) read() (registryFile, error) {
-	raw, err := os.ReadFile(s.path)
+	_, err = s.collection.DeleteOne(ctx, bson.M{"_id": record.ID})
 	if err != nil {
-		return registryFile{}, fmt.Errorf("read registry file: %w", err)
+		return fmt.Errorf("delete route: %w", err)
 	}
-
-	var file registryFile
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return registryFile{}, fmt.Errorf("parse registry JSON: %w", err)
-	}
-
-	if file.Version != 1 {
-		return registryFile{}, fmt.Errorf("unsupported registry version: %d", file.Version)
-	}
-	if file.Routes == nil {
-		file.Routes = []Route{}
-	}
-
-	return file, nil
-}
-
-func (s *Store) write(file registryFile) error {
-	dirPath := filepath.Dir(s.path)
-	if err := os.MkdirAll(dirPath, 0o755); err != nil {
-		return fmt.Errorf("ensure registry directory: %w", err)
-	}
-
-	content, err := json.MarshalIndent(file, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encode registry JSON: %w", err)
-	}
-	content = append(content, '\n')
-
-	tempFilePath := s.path + ".tmp"
-	if err := os.WriteFile(tempFilePath, content, 0o644); err != nil {
-		return fmt.Errorf("write temp registry file: %w", err)
-	}
-	if err := os.Rename(tempFilePath, s.path); err != nil {
-		_ = os.Remove(tempFilePath)
-		return fmt.Errorf("replace registry file: %w", err)
-	}
-
 	return nil
+}
+
+func (s *Store) findByID(ctx context.Context, id string) (routeRecord, error) {
+	objectID, err := primitive.ObjectIDFromHex(strings.TrimSpace(id))
+	if err != nil {
+		return routeRecord{}, ErrRouteNotFound
+	}
+
+	var record routeRecord
+	err = s.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&record)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return routeRecord{}, ErrRouteNotFound
+		}
+		return routeRecord{}, fmt.Errorf("find route: %w", err)
+	}
+
+	return record, nil
+}
+
+func buildScopeFilter(scope AccessScope) (bson.M, error) {
+	if scope.IsAdmin {
+		return bson.M{}, nil
+	}
+
+	userID, err := primitive.ObjectIDFromHex(strings.TrimSpace(scope.UserID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id: %w", err)
+	}
+
+	return bson.M{"ownerId": userID}, nil
+}
+
+func (r routeRecord) toPublic() Route {
+	return Route{
+		ID:          r.ID.Hex(),
+		OwnerID:     r.OwnerID.Hex(),
+		OwnerName:   r.OwnerName,
+		OwnerEmail:  r.OwnerEmail,
+		Subdomain:   r.Subdomain,
+		Destination: r.Destination,
+		Enabled:     r.Enabled,
+		Note:        r.Note,
+		CreatedAt:   r.CreatedAt.UTC().Format(time.RFC3339Nano),
+		UpdatedAt:   r.UpdatedAt.UTC().Format(time.RFC3339Nano),
+	}
 }
 
 func normalizeSubdomain(value string) string {
@@ -307,14 +329,6 @@ func validateDestination(raw string) error {
 	}
 
 	return nil
-}
-
-func newRouteID() string {
-	buffer := make([]byte, 16)
-	if _, err := rand.Read(buffer); err != nil {
-		return fmt.Sprintf("route-%d", time.Now().UnixNano())
-	}
-	return hex.EncodeToString(buffer)
 }
 
 type normalizedInput struct {
