@@ -1,0 +1,14 @@
+# Build outputs
+/wildcard-catcher
+/bin/
+
+# Go cache and temp artifacts
+/.gocache/
+/coverage.out
+
+# Local environment files
+.env
+.env.local
+
+# Data
+data/

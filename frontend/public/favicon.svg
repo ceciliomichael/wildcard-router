@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Warm background -->
+  <rect width="32" height="32" rx="8" fill="#1A1A1A"/>
+  
+  <!-- Abstract geometric mark - interlocking shapes suggesting connection/creation -->
+  <circle cx="12" cy="12" r="5" stroke="#FF6B5B" stroke-width="2" fill="none"/>
+  <circle cx="20" cy="20" r="5" stroke="#4ECDC4" stroke-width="2" fill="none"/>
+  
+  <!-- Connecting diagonal element -->
+  <line x1="15" y1="15" x2="17" y2="17" stroke="#FFFEF5" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Accent dots -->
+  <circle cx="12" cy="12" r="1.5" fill="#FF6B5B"/>
+  <circle cx="20" cy="20" r="1.5" fill="#4ECDC4"/>
+</svg>
