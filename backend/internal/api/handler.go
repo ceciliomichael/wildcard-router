@@ -277,6 +277,10 @@ func (h *Handler) handleRoutesCollection(writer http.ResponseWriter, request *ht
 			h.writeError(writer, http.StatusBadRequest, err.Error())
 			return
 		}
+		if h.isReservedRouteSubdomain(payload.Subdomain) {
+			h.writeError(writer, http.StatusConflict, "subdomain is reserved")
+			return
+		}
 
 		route, err := h.routes.Create(ctx, registry.OwnerInfo{
 			UserID:    user.ID,
@@ -322,6 +326,10 @@ func (h *Handler) handleRoutesItem(writer http.ResponseWriter, request *http.Req
 		var payload registry.UpdateRouteInput
 		if err := decodeBody(request, &payload); err != nil {
 			h.writeError(writer, http.StatusBadRequest, err.Error())
+			return
+		}
+		if h.isReservedRouteSubdomain(payload.Subdomain) {
+			h.writeError(writer, http.StatusConflict, "subdomain is reserved")
 			return
 		}
 
@@ -441,4 +449,13 @@ func decodeBody(request *http.Request, target any) error {
 		return errors.New("request body must contain a single JSON object")
 	}
 	return nil
+}
+
+func (h *Handler) isReservedRouteSubdomain(value string) bool {
+	reserved := strings.TrimSpace(h.cfg.FrontendRouteSubdomain)
+	if reserved == "" {
+		return false
+	}
+
+	return strings.EqualFold(strings.TrimSpace(value), reserved)
 }

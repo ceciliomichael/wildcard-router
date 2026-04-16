@@ -40,7 +40,7 @@ func TestHandlerRoutesMultipleSubdomainsConcurrently(t *testing.T) {
 	secondCapture := newCaptureServer(t, "second-upstream")
 
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		stubRouteStore{routes: map[string]registry.Route{
 			"subdomain1": {
 				ID:          "route-1",
@@ -163,7 +163,7 @@ func TestHandlerRedirectsPlainHTTPSubdomainToHTTPS(t *testing.T) {
 	t.Parallel()
 
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		stubRouteStore{routes: map[string]registry.Route{}},
 		log.New(io.Discard, "", 0),
 	)
@@ -188,7 +188,7 @@ func TestHandlerSetsHSTSOnSecureSubdomainRequests(t *testing.T) {
 
 	upstream := newCaptureServer(t, "ok")
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		stubRouteStore{routes: map[string]registry.Route{
 			"subdomain1": {
 				ID:          "route-1",
@@ -228,7 +228,7 @@ func TestHandlerCanProxyToSelfSignedHTTPSUpstreamWhenTLSVerificationIsSkipped(t 
 	t.Cleanup(upstream.Close)
 
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		stubRouteStore{routes: map[string]registry.Route{
 			"proxmox": {
 				ID:                    "route-1",
@@ -286,7 +286,7 @@ func TestHandlerCanProxyToBareHostPortDestination(t *testing.T) {
 	}
 
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		stubRouteStore{routes: map[string]registry.Route{
 			"router": {
 				ID:          "route-1",
@@ -328,20 +328,17 @@ func TestHandlerCanProxyToBareHostPortDestination(t *testing.T) {
 	}
 }
 
-func TestHandlerFallsBackToForwardedHostWhenRequestHostIsInternal(t *testing.T) {
+func TestHandlerAutomaticallyRoutesFrontendSubdomain(t *testing.T) {
 	t.Parallel()
 
 	upstream := newCaptureServer(t, "frontend")
 	handler := NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: false},
-		stubRouteStore{routes: map[string]registry.Route{
-			"router": {
-				ID:          "route-1",
-				Subdomain:   "router",
-				Destination: upstream.URL,
-				Enabled:     true,
-			},
-		}},
+		config.Config{
+			BaseDomain:               "echosphere.systems",
+			FrontendRouteSubdomain:   "router",
+			FrontendRouteDestination: upstream.URL,
+		},
+		stubRouteStore{routes: map[string]registry.Route{}},
 		log.New(io.Discard, "", 0),
 	)
 

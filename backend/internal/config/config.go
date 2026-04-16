@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -9,17 +10,18 @@ import (
 )
 
 type Config struct {
-	Port                   int
-	BaseDomain             string
-	MongoURI               string
-	MongoDatabase          string
-	BootstrapAdminUsername string
-	BootstrapAdminPassword string
-	BootstrapAdminName     string
-	SessionCookieName      string
-	SessionHours           int
-	SessionCookieSecure    bool
-	TrustForwardedHost     bool
+	Port                     int
+	BaseDomain               string
+	MongoURI                 string
+	MongoDatabase            string
+	FrontendRouteSubdomain   string
+	FrontendRouteDestination string
+	BootstrapAdminUsername   string
+	BootstrapAdminPassword   string
+	BootstrapAdminName       string
+	SessionCookieName        string
+	SessionHours             int
+	SessionCookieSecure      bool
 }
 
 func (c Config) ListenAddress() string {
@@ -58,20 +60,33 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	trustForwardedHost := parseBoolDefaultFalse(os.Getenv("TRUST_X_FORWARDED_HOST"))
+	frontendPort, err := parsePort(firstNonEmpty(os.Getenv("FRONTEND_PORT"), "3000"))
+	if err != nil {
+		return Config{}, err
+	}
+
+	frontendRouteSubdomain := normalizeHost(firstNonEmpty(os.Getenv("FRONTEND_ROUTE_SUBDOMAIN"), "router"))
+	frontendRouteDestination, err := normalizeDestination(firstNonEmpty(
+		os.Getenv("FRONTEND_ROUTE_DESTINATION"),
+		fmt.Sprintf("http://frontend:%d", frontendPort),
+	))
+	if err != nil {
+		return Config{}, fmt.Errorf("FRONTEND_ROUTE_DESTINATION: %w", err)
+	}
 
 	return Config{
-		Port:                   port,
-		BaseDomain:             baseDomain,
-		MongoURI:               mongoURI,
-		MongoDatabase:          strings.TrimSpace(firstNonEmpty(os.Getenv("MONGODB_DATABASE"), "wildcard_catcher")),
-		BootstrapAdminUsername: strings.TrimSpace(os.Getenv("BOOTSTRAP_ADMIN_USERNAME")),
-		BootstrapAdminPassword: os.Getenv("BOOTSTRAP_ADMIN_PASSWORD"),
-		BootstrapAdminName:     strings.TrimSpace(firstNonEmpty(os.Getenv("BOOTSTRAP_ADMIN_NAME"), "Main Admin")),
-		SessionCookieName:      strings.TrimSpace(firstNonEmpty(os.Getenv("SESSION_COOKIE_NAME"), "wc_session")),
-		SessionHours:           sessionHours,
-		SessionCookieSecure:    parseBoolDefaultFalse(os.Getenv("SESSION_COOKIE_SECURE")),
-		TrustForwardedHost:     trustForwardedHost,
+		Port:                     port,
+		BaseDomain:               baseDomain,
+		MongoURI:                 mongoURI,
+		MongoDatabase:            strings.TrimSpace(firstNonEmpty(os.Getenv("MONGODB_DATABASE"), "wildcard_catcher")),
+		FrontendRouteSubdomain:   frontendRouteSubdomain,
+		FrontendRouteDestination: frontendRouteDestination,
+		BootstrapAdminUsername:   strings.TrimSpace(os.Getenv("BOOTSTRAP_ADMIN_USERNAME")),
+		BootstrapAdminPassword:   os.Getenv("BOOTSTRAP_ADMIN_PASSWORD"),
+		BootstrapAdminName:       strings.TrimSpace(firstNonEmpty(os.Getenv("BOOTSTRAP_ADMIN_NAME"), "Main Admin")),
+		SessionCookieName:        strings.TrimSpace(firstNonEmpty(os.Getenv("SESSION_COOKIE_NAME"), "wc_session")),
+		SessionHours:             sessionHours,
+		SessionCookieSecure:      parseBoolDefaultFalse(os.Getenv("SESSION_COOKIE_SECURE")),
 	}, nil
 }
 
@@ -121,4 +136,30 @@ func firstNonEmpty(values ...string) string {
 func parseBoolDefaultFalse(raw string) bool {
 	value := strings.TrimSpace(strings.ToLower(raw))
 	return value == "1" || value == "true" || value == "yes" || value == "on"
+}
+
+func normalizeDestination(raw string) (string, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", fmt.Errorf("destination is required")
+	}
+
+	parsedInput := trimmed
+	if !strings.Contains(parsedInput, "://") {
+		parsedInput = "http://" + parsedInput
+	}
+
+	parsed, err := url.Parse(parsedInput)
+	if err != nil {
+		return "", err
+	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", fmt.Errorf("scheme must be http or https")
+	}
+	if parsed.Host == "" {
+		return "", fmt.Errorf("host is required")
+	}
+
+	return parsed.String(), nil
 }

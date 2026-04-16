@@ -15,8 +15,8 @@ import (
 	"wildcard-catcher/internal/envfile"
 	"wildcard-catcher/internal/identity"
 	"wildcard-catcher/internal/proxy"
-	"wildcard-catcher/internal/server"
 	"wildcard-catcher/internal/registry"
+	"wildcard-catcher/internal/server"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -81,7 +81,6 @@ func main() {
 	log.Printf("wildcard-catcher backend listening on %s", cfg.ListenAddress())
 	log.Printf("base domain: %s", cfg.BaseDomain)
 	log.Printf("mongodb: %s", sanitizeMongoURI(cfg.MongoURI, cfg.MongoDatabase))
-	log.Printf("trust x-forwarded-host: %t", cfg.TrustForwardedHost)
 
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server stopped: %v", err)

@@ -9,6 +9,7 @@ import { StatusBanner } from "./components/StatusBanner";
 import { SummaryStrip } from "./components/SummaryStrip";
 import { RouteForm } from "./RouteForm";
 import { RouteTable } from "./RouteTable";
+import { filterReservedRoutes, RESERVED_ROUTE_SUBDOMAIN } from "./reserved";
 import type { Route, RoutePayload } from "./types";
 
 interface RoutesWorkspaceProps {
@@ -42,7 +43,7 @@ export function RoutesWorkspace({ auth, showOwner }: RoutesWorkspaceProps) {
       setFetchError(null);
       try {
         const data = await listRoutes();
-        setRoutes(data);
+        setRoutes(filterReservedRoutes(data));
       } catch (err) {
         if (
           err &&
@@ -89,15 +90,26 @@ export function RoutesWorkspace({ auth, showOwner }: RoutesWorkspaceProps) {
     try {
       if (editingRoute && editingRoute !== "new") {
         const updated = await updateRoute(editingRoute.id, payload);
-        setRoutes((prev) =>
-          prev.map((route) => (route.id === updated.id ? updated : route)),
-        );
-        if (selectedRoute?.id === updated.id) {
-          setSelectedRoute(updated);
+        if (
+          payload.subdomain.trim().toLowerCase() === RESERVED_ROUTE_SUBDOMAIN
+        ) {
+          setRoutes((prev) => prev.filter((route) => route.id !== updated.id));
+          if (selectedRoute?.id === updated.id) {
+            setSelectedRoute(null);
+          }
+        } else {
+          setRoutes((prev) =>
+            prev.map((route) => (route.id === updated.id ? updated : route)),
+          );
+          if (selectedRoute?.id === updated.id) {
+            setSelectedRoute(updated);
+          }
         }
       } else {
         const created = await createRoute(payload);
-        setRoutes((prev) => [created, ...prev]);
+        if (created.subdomain.toLowerCase() !== RESERVED_ROUTE_SUBDOMAIN) {
+          setRoutes((prev) => [created, ...prev]);
+        }
       }
       setEditingRoute(null);
     } catch (err) {

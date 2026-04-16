@@ -44,15 +44,16 @@ BOOTSTRAP_ADMIN_NAME=Main Admin
 SESSION_COOKIE_NAME=wc_session
 SESSION_TTL_HOURS=168
 SESSION_COOKIE_SECURE=false
-TRUST_X_FORWARDED_HOST=true
+FRONTEND_ROUTE_SUBDOMAIN=router
+FRONTEND_ROUTE_DESTINATION=http://frontend:3000
 ```
 
 Notes:
 
 - `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` are required on first startup so the initial admin account can be created.
 - If MongoDB already contains an admin user, bootstrap credentials may be omitted.
-- `TRUST_X_FORWARDED_HOST` should be `true` when the backend is behind a trusted proxy or tunnel. The Docker Compose stack enables it by default because that is the intended deployment path for wildcard routing.
 - `SESSION_COOKIE_SECURE` should be `true` when the app is served over HTTPS.
+- The backend reserves `FRONTEND_ROUTE_SUBDOMAIN` as an automatic route to the frontend service. By default it points `router` at `http://frontend:3000` inside Docker Compose.
 - For local development, the backend usually talks to MongoDB on `localhost:27019`.
 - In Docker Compose, the backend connects to `mongo:27019` inside the Docker network.
 

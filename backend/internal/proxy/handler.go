@@ -46,7 +46,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (bool, error) {
 	host, subdomain, ok := h.resolveRouteTarget(request)
 	if !ok {
-		if normalizeHost(extractHost(request, h.cfg.TrustForwardedHost)) == "" {
+		if normalizeHost(request.Host) == "" {
 			http.Error(writer, "host header required", http.StatusBadRequest)
 			return true, nil
 		}
@@ -66,6 +66,12 @@ func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (b
 		h.logger.Printf("registry lookup failed for host=%s subdomain=%s: %v", host, subdomain, err)
 		http.Error(writer, "registry error", http.StatusInternalServerError)
 		return true, err
+	}
+	if !found {
+		if fallbackRoute, fallbackFound := h.defaultFrontendRoute(subdomain); fallbackFound {
+			route = fallbackRoute
+			found = true
+		}
 	}
 
 	if !found {
@@ -94,30 +100,43 @@ func (h *Handler) HasRoute(request *http.Request) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if found {
+		return true, nil
+	}
 
-	return found, nil
+	_, fallbackFound := h.defaultFrontendRoute(subdomain)
+	return fallbackFound, nil
 }
 
 func (h *Handler) resolveRouteTarget(request *http.Request) (string, string, bool) {
-	host := normalizeHost(extractHost(request, h.cfg.TrustForwardedHost))
-	if host == "" {
-		return "", "", false
+	if host := normalizeHost(request.Host); host != "" {
+		if subdomain, ok := extractSubdomain(host, h.cfg.BaseDomain); ok {
+			return host, subdomain, true
+		}
 	}
 
-	if subdomain, ok := extractSubdomain(host, h.cfg.BaseDomain); ok {
-		return host, subdomain, true
-	}
-
-	forwardedHost := normalizeHost(extractForwardedHost(request))
-	if forwardedHost == "" {
-		return "", "", false
-	}
-
-	if subdomain, ok := extractSubdomain(forwardedHost, h.cfg.BaseDomain); ok {
-		return forwardedHost, subdomain, true
+	if forwardedHost := normalizeHost(extractForwardedHost(request)); forwardedHost != "" {
+		if subdomain, ok := extractSubdomain(forwardedHost, h.cfg.BaseDomain); ok {
+			return forwardedHost, subdomain, true
+		}
 	}
 
 	return "", "", false
+}
+
+func (h *Handler) defaultFrontendRoute(subdomain string) (registry.Route, bool) {
+	if strings.TrimSpace(h.cfg.FrontendRouteSubdomain) == "" || strings.TrimSpace(h.cfg.FrontendRouteDestination) == "" {
+		return registry.Route{}, false
+	}
+	if !strings.EqualFold(strings.TrimSpace(subdomain), strings.TrimSpace(h.cfg.FrontendRouteSubdomain)) {
+		return registry.Route{}, false
+	}
+
+	return registry.Route{
+		Subdomain:   strings.TrimSpace(h.cfg.FrontendRouteSubdomain),
+		Destination: strings.TrimSpace(h.cfg.FrontendRouteDestination),
+		Enabled:     true,
+	}, true
 }
 
 func extractForwardedHost(request *http.Request) string {
@@ -186,16 +205,6 @@ func insecureSkipVerifyTransport() *http.Transport {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	return transport
-}
-
-func extractHost(request *http.Request, trustForwardedHost bool) string {
-	if trustForwardedHost {
-		forwardedHost := extractForwardedHost(request)
-		if forwardedHost != "" {
-			return forwardedHost
-		}
-	}
-	return request.Host
 }
 
 func normalizeHost(rawHost string) string {

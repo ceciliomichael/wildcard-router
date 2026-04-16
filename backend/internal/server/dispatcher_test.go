@@ -47,7 +47,7 @@ func TestDispatcherProxiesApiPathsForRoutedSubdomains(t *testing.T) {
 	t.Cleanup(upstream.Close)
 
 	proxyHandler := proxy.NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		routedStore{routes: map[string]registry.Route{
 			"supabase-wah4p": {
 				ID:          "route-1",
@@ -94,11 +94,65 @@ func TestDispatcherProxiesApiPathsForRoutedSubdomains(t *testing.T) {
 	}
 }
 
+func TestDispatcherAutomaticallyRoutesFrontendSubdomain(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write([]byte("frontend"))
+	}))
+	t.Cleanup(upstream.Close)
+
+	proxyHandler := proxy.NewHandler(
+		config.Config{
+			BaseDomain:               "echosphere.systems",
+			FrontendRouteSubdomain:   "router",
+			FrontendRouteDestination: upstream.URL,
+		},
+		emptyRouteStore{},
+		log.New(io.Discard, "", 0),
+	)
+	apiHandler := &apiCaptureHandler{}
+	dispatcher := NewDispatcher(apiHandler, proxyHandler)
+
+	server := httptest.NewServer(dispatcher)
+	t.Cleanup(server.Close)
+
+	request, err := http.NewRequest(http.MethodGet, server.URL+"/dashboard", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	request.Host = "backend:3067"
+	request.Header.Set("X-Forwarded-Host", "router.echosphere.systems")
+	request.Header.Set("X-Forwarded-Proto", "https")
+
+	response, err := server.Client().Do(request)
+	if err != nil {
+		t.Fatalf("do request: %v", err)
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: %d", response.StatusCode)
+	}
+	if string(body) != "frontend" {
+		t.Fatalf("unexpected body: %q", string(body))
+	}
+	if apiHandler.called {
+		t.Fatalf("local API should not have handled the automatic frontend route")
+	}
+}
+
 func TestDispatcherFallsBackToLocalApiForUnroutedRequests(t *testing.T) {
 	t.Parallel()
 
 	proxyHandler := proxy.NewHandler(
-		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		config.Config{BaseDomain: "echosphere.systems"},
 		emptyRouteStore{},
 		log.New(io.Discard, "", 0),
 	)

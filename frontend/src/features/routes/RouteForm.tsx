@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { Switch } from "../../components/Switch";
+import { isReservedRouteSubdomain, RESERVED_ROUTE_SUBDOMAIN } from "./reserved";
 import type { Route, RoutePayload } from "./types";
 
 interface RouteFormProps {
@@ -66,10 +67,12 @@ export function RouteForm({
       ? "Subdomain is required."
       : !isDnsSafe(subdomain.trim())
         ? "Must be a valid DNS label (letters, numbers, hyphens)."
-        : !isEditing &&
-            existingSubdomains.includes(subdomain.trim().toLowerCase())
-          ? "Subdomain already exists."
-          : null
+        : isReservedRouteSubdomain(subdomain)
+          ? `The subdomain "${RESERVED_ROUTE_SUBDOMAIN}" is reserved for the frontend.`
+          : !isEditing &&
+              existingSubdomains.includes(subdomain.trim().toLowerCase())
+            ? "Subdomain already exists."
+            : null
     : null;
 
   const destError = touchedDest
@@ -83,6 +86,7 @@ export function RouteForm({
   const isValid =
     subdomain.trim() !== "" &&
     isDnsSafe(subdomain.trim()) &&
+    !isReservedRouteSubdomain(subdomain) &&
     (isEditing ||
       !existingSubdomains.includes(subdomain.trim().toLowerCase())) &&
     isValidUrl(destination.trim());

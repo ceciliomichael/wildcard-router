@@ -51,6 +51,7 @@ Notes:
 - For tunnel-based development, set `NEXT_ALLOWED_DEV_ORIGINS` to your tunnel host if needed.
 - The frontend config already includes common tunnel domains used in development.
 - The route editor includes an option for upstream TLS verification, which is useful for self-signed services.
+- The `router` subdomain is reserved for the automatic frontend route and is hidden from the normal route list.
 
 ## How the frontend works
 
