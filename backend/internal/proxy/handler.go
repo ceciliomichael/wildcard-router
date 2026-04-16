@@ -44,14 +44,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (bool, error) {
-	host := normalizeHost(extractHost(request, h.cfg.TrustForwardedHost))
-	if host == "" {
-		http.Error(writer, "host header required", http.StatusBadRequest)
-		return true, nil
-	}
-
-	subdomain, ok := extractSubdomain(host, h.cfg.BaseDomain)
+	host, subdomain, ok := h.resolveRouteTarget(request)
 	if !ok {
+		if normalizeHost(extractHost(request, h.cfg.TrustForwardedHost)) == "" {
+			http.Error(writer, "host header required", http.StatusBadRequest)
+			return true, nil
+		}
 		return false, nil
 	}
 
@@ -87,12 +85,7 @@ func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (b
 }
 
 func (h *Handler) HasRoute(request *http.Request) (bool, error) {
-	host := normalizeHost(extractHost(request, h.cfg.TrustForwardedHost))
-	if host == "" {
-		return false, nil
-	}
-
-	subdomain, ok := extractSubdomain(host, h.cfg.BaseDomain)
+	_, subdomain, ok := h.resolveRouteTarget(request)
 	if !ok {
 		return false, nil
 	}
@@ -103,6 +96,37 @@ func (h *Handler) HasRoute(request *http.Request) (bool, error) {
 	}
 
 	return found, nil
+}
+
+func (h *Handler) resolveRouteTarget(request *http.Request) (string, string, bool) {
+	host := normalizeHost(extractHost(request, h.cfg.TrustForwardedHost))
+	if host == "" {
+		return "", "", false
+	}
+
+	if subdomain, ok := extractSubdomain(host, h.cfg.BaseDomain); ok {
+		return host, subdomain, true
+	}
+
+	forwardedHost := normalizeHost(extractForwardedHost(request))
+	if forwardedHost == "" {
+		return "", "", false
+	}
+
+	if subdomain, ok := extractSubdomain(forwardedHost, h.cfg.BaseDomain); ok {
+		return forwardedHost, subdomain, true
+	}
+
+	return "", "", false
+}
+
+func extractForwardedHost(request *http.Request) string {
+	forwardedHost := request.Header.Get("X-Forwarded-Host")
+	if forwardedHost == "" {
+		return ""
+	}
+	firstHost, _, _ := strings.Cut(forwardedHost, ",")
+	return firstHost
 }
 
 func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*httputil.ReverseProxy, error) {
@@ -128,6 +152,7 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 	if insecureSkipTLSVerify {
 		proxy.Transport = insecureSkipVerifyTransport()
 	}
+
 	originalDirector := proxy.Director
 	proxy.Director = func(request *http.Request) {
 		originalHost := request.Host
@@ -165,10 +190,9 @@ func insecureSkipVerifyTransport() *http.Transport {
 
 func extractHost(request *http.Request, trustForwardedHost bool) string {
 	if trustForwardedHost {
-		forwardedHost := request.Header.Get("X-Forwarded-Host")
+		forwardedHost := extractForwardedHost(request)
 		if forwardedHost != "" {
-			firstHost, _, _ := strings.Cut(forwardedHost, ",")
-			return firstHost
+			return forwardedHost
 		}
 	}
 	return request.Host

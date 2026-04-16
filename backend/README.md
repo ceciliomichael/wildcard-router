@@ -51,7 +51,7 @@ Notes:
 
 - `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` are required on first startup so the initial admin account can be created.
 - If MongoDB already contains an admin user, bootstrap credentials may be omitted.
-- `TRUST_X_FORWARDED_HOST` should be `true` only when the backend is behind a trusted proxy or tunnel.
+- `TRUST_X_FORWARDED_HOST` should be `true` when the backend is behind a trusted proxy or tunnel. The Docker Compose stack enables it by default because that is the intended deployment path for wildcard routing.
 - `SESSION_COOKIE_SECURE` should be `true` when the app is served over HTTPS.
 - For local development, the backend usually talks to MongoDB on `localhost:27019`.
 - In Docker Compose, the backend connects to `mongo:27019` inside the Docker network.
