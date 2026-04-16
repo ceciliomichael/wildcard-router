@@ -8,6 +8,7 @@ It provides:
 - account login with session cookies
 - admin and owner-scoped route management
 - reverse proxying for enabled wildcard subdomains
+- optional upstream TLS verification bypass for self-signed HTTPS services like Proxmox
 
 ## Why it matters
 
@@ -101,6 +102,7 @@ Requests to `<subdomain>.<WILDCARD_BASE_DOMAIN>`:
 - return `404` when no enabled subdomain exists
 
 The proxy forwards `X-Forwarded-Host` and `X-Forwarded-Proto` to upstream apps.
+When a route is marked to skip upstream TLS verification, the backend will still proxy to `https://` origins but will not reject self-signed certs.
 
 ## Tunnel workflow
 

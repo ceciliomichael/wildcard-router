@@ -123,6 +123,7 @@ export function RoutesWorkspace({ auth, showOwner }: RoutesWorkspaceProps) {
         subdomain: route.subdomain,
         destination: route.destination,
         enabled: !route.enabled,
+        insecureSkipTLSVerify: route.insecureSkipTLSVerify,
         note: route.note,
       });
       setRoutes((prev) =>

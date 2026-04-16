@@ -24,30 +24,33 @@ var (
 )
 
 type Route struct {
-	ID          string `json:"id"`
-	OwnerID     string `json:"ownerId"`
-	OwnerName   string `json:"ownerName"`
-	OwnerEmail  string `json:"ownerEmail"`
-	Subdomain   string `json:"subdomain"`
-	Destination string `json:"destination"`
-	Enabled     bool   `json:"enabled"`
-	Note        string `json:"note"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID                    string `json:"id"`
+	OwnerID               string `json:"ownerId"`
+	OwnerName             string `json:"ownerName"`
+	OwnerEmail            string `json:"ownerEmail"`
+	Subdomain             string `json:"subdomain"`
+	Destination           string `json:"destination"`
+	Enabled               bool   `json:"enabled"`
+	InsecureSkipTLSVerify bool   `json:"insecureSkipTLSVerify"`
+	Note                  string `json:"note"`
+	CreatedAt             string `json:"createdAt"`
+	UpdatedAt             string `json:"updatedAt"`
 }
 
 type CreateRouteInput struct {
-	Subdomain   string `json:"subdomain"`
-	Destination string `json:"destination"`
-	Enabled     bool   `json:"enabled"`
-	Note        string `json:"note"`
+	Subdomain             string `json:"subdomain"`
+	Destination           string `json:"destination"`
+	Enabled               bool   `json:"enabled"`
+	InsecureSkipTLSVerify bool   `json:"insecureSkipTLSVerify"`
+	Note                  string `json:"note"`
 }
 
 type UpdateRouteInput struct {
-	Subdomain   string `json:"subdomain"`
-	Destination string `json:"destination"`
-	Enabled     bool   `json:"enabled"`
-	Note        string `json:"note"`
+	Subdomain             string `json:"subdomain"`
+	Destination           string `json:"destination"`
+	Enabled               bool   `json:"enabled"`
+	InsecureSkipTLSVerify bool   `json:"insecureSkipTLSVerify"`
+	Note                  string `json:"note"`
 }
 
 type AccessScope struct {
@@ -66,17 +69,18 @@ type Store struct {
 }
 
 type routeRecord struct {
-	ID                  primitive.ObjectID `bson:"_id,omitempty"`
-	OwnerID             primitive.ObjectID `bson:"ownerId"`
-	OwnerName           string             `bson:"ownerName"`
-	OwnerEmail          string             `bson:"ownerEmail"`
-	Subdomain           string             `bson:"subdomain"`
-	NormalizedSubdomain string             `bson:"normalizedSubdomain"`
-	Destination         string             `bson:"destination"`
-	Enabled             bool               `bson:"enabled"`
-	Note                string             `bson:"note"`
-	CreatedAt           time.Time          `bson:"createdAt"`
-	UpdatedAt           time.Time          `bson:"updatedAt"`
+	ID                    primitive.ObjectID `bson:"_id,omitempty"`
+	OwnerID               primitive.ObjectID `bson:"ownerId"`
+	OwnerName             string             `bson:"ownerName"`
+	OwnerEmail            string             `bson:"ownerEmail"`
+	Subdomain             string             `bson:"subdomain"`
+	NormalizedSubdomain   string             `bson:"normalizedSubdomain"`
+	Destination           string             `bson:"destination"`
+	Enabled               bool               `bson:"enabled"`
+	InsecureSkipTLSVerify bool               `bson:"insecureSkipTLSVerify"`
+	Note                  string             `bson:"note"`
+	CreatedAt             time.Time          `bson:"createdAt"`
+	UpdatedAt             time.Time          `bson:"updatedAt"`
 }
 
 func NewStore(db *mongo.Database) *Store {
@@ -165,16 +169,17 @@ func (s *Store) Create(ctx context.Context, owner OwnerInfo, input CreateRouteIn
 
 	now := time.Now().UTC()
 	record := routeRecord{
-		OwnerID:             ownerID,
-		OwnerName:           strings.TrimSpace(owner.UserName),
-		OwnerEmail:          strings.TrimSpace(owner.UserEmail),
-		Subdomain:           normalized.subdomain,
-		NormalizedSubdomain: normalized.subdomain,
-		Destination:         normalized.destination,
-		Enabled:             input.Enabled,
-		Note:                normalized.note,
-		CreatedAt:           now,
-		UpdatedAt:           now,
+		OwnerID:               ownerID,
+		OwnerName:             strings.TrimSpace(owner.UserName),
+		OwnerEmail:            strings.TrimSpace(owner.UserEmail),
+		Subdomain:             normalized.subdomain,
+		NormalizedSubdomain:   normalized.subdomain,
+		Destination:           normalized.destination,
+		Enabled:               input.Enabled,
+		InsecureSkipTLSVerify: input.InsecureSkipTLSVerify,
+		Note:                  normalized.note,
+		CreatedAt:             now,
+		UpdatedAt:             now,
 	}
 
 	result, err := s.collection.InsertOne(ctx, record)
@@ -212,6 +217,7 @@ func (s *Store) Update(ctx context.Context, scope AccessScope, id string, input 
 	record.NormalizedSubdomain = normalized.subdomain
 	record.Destination = normalized.destination
 	record.Enabled = input.Enabled
+	record.InsecureSkipTLSVerify = input.InsecureSkipTLSVerify
 	record.Note = normalized.note
 	record.UpdatedAt = time.Now().UTC()
 
@@ -275,16 +281,17 @@ func buildScopeFilter(scope AccessScope) (bson.M, error) {
 
 func (r routeRecord) toPublic() Route {
 	return Route{
-		ID:          r.ID.Hex(),
-		OwnerID:     r.OwnerID.Hex(),
-		OwnerName:   r.OwnerName,
-		OwnerEmail:  r.OwnerEmail,
-		Subdomain:   r.Subdomain,
-		Destination: r.Destination,
-		Enabled:     r.Enabled,
-		Note:        r.Note,
-		CreatedAt:   r.CreatedAt.UTC().Format(time.RFC3339Nano),
-		UpdatedAt:   r.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		ID:                    r.ID.Hex(),
+		OwnerID:               r.OwnerID.Hex(),
+		OwnerName:             r.OwnerName,
+		OwnerEmail:            r.OwnerEmail,
+		Subdomain:             r.Subdomain,
+		Destination:           r.Destination,
+		Enabled:               r.Enabled,
+		InsecureSkipTLSVerify: r.InsecureSkipTLSVerify,
+		Note:                  r.Note,
+		CreatedAt:             r.CreatedAt.UTC().Format(time.RFC3339Nano),
+		UpdatedAt:             r.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 

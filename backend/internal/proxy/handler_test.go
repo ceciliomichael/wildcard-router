@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -212,6 +213,66 @@ func TestHandlerSetsHSTSOnSecureSubdomainRequests(t *testing.T) {
 	}
 	if hsts := recorder.Header().Get("Strict-Transport-Security"); hsts != "max-age=31536000; includeSubDomains" {
 		t.Fatalf("unexpected hsts header: %s", hsts)
+	}
+}
+
+func TestHandlerCanProxyToSelfSignedHTTPSUpstreamWhenTLSVerificationIsSkipped(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/dashboard" {
+			t.Fatalf("unexpected upstream path: %s", request.URL.Path)
+		}
+		_, _ = io.WriteString(writer, "proxmox")
+	}))
+	t.Cleanup(upstream.Close)
+
+	handler := NewHandler(
+		config.Config{BaseDomain: "echosphere.systems", TrustForwardedHost: true},
+		stubRouteStore{routes: map[string]registry.Route{
+			"proxmox": {
+				ID:                    "route-1",
+				Subdomain:             "proxmox",
+				Destination:           upstream.URL,
+				Enabled:               true,
+				InsecureSkipTLSVerify: true,
+			},
+		}},
+		log.New(io.Discard, "", 0),
+	)
+
+	proxyServer := httptest.NewServer(handler)
+	t.Cleanup(proxyServer.Close)
+
+	request, err := http.NewRequest(http.MethodGet, proxyServer.URL+"/dashboard", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	request.Host = "proxy.internal"
+	request.Header.Set("X-Forwarded-Host", "proxmox.echosphere.systems")
+	request.Header.Set("X-Forwarded-Proto", "https")
+
+	client := proxyServer.Client()
+	client.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("do request: %v", err)
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: %d", response.StatusCode)
+	}
+	if string(body) != "proxmox" {
+		t.Fatalf("unexpected body: %s", string(body))
 	}
 }
 

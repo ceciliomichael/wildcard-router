@@ -23,6 +23,7 @@ That makes retunneling much easier when you want `*.your-domain.com` to keep wor
 - Supports admin and standard user access
 - Proxies enabled wildcard subdomains to their configured destinations
 - Keeps the frontend and backend separate so each can be run independently
+- Can optionally skip upstream TLS verification for services like Proxmox that use self-signed HTTPS certificates
 
 ## Project layout
 
@@ -63,4 +64,5 @@ If you use Docker Compose, copy `.env.example` to `.env` and adjust the values f
 
 - The frontend uses the backend through its own API routes.
 - The backend performs the actual wildcard proxying.
+- Routes can be pointed at `https://` upstreams and, when needed, can skip upstream TLS verification for self-signed services.
 - For tunnel-based development, the frontend Next config includes dev-origin support for common tunnel hosts and a custom allowlist variable.

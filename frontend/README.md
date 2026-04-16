@@ -14,6 +14,7 @@ It is especially useful when the backend is exposed once through a wildcard Clou
 - switch destinations without rebuilding tunnel config
 - manage users and permissions
 - keep the UI available even when the target services behind the routes are local
+- mark upstream HTTPS services such as Proxmox to skip certificate verification when needed
 
 ## Run
 
@@ -49,6 +50,7 @@ Notes:
 - When running in Docker Compose, the frontend can use `http://backend:3067` internally.
 - For tunnel-based development, set `NEXT_ALLOWED_DEV_ORIGINS` to your tunnel host if needed.
 - The frontend config already includes common tunnel domains used in development.
+- The route editor includes an option for upstream TLS verification, which is useful for self-signed services.
 
 ## How the frontend works
 

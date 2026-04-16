@@ -6,6 +6,7 @@ export interface Route {
   subdomain: string;
   destination: string;
   enabled: boolean;
+  insecureSkipTLSVerify: boolean;
   note?: string;
   createdAt: string;
   updatedAt: string;
@@ -15,6 +16,7 @@ export interface RoutePayload {
   subdomain: string;
   destination: string;
   enabled: boolean;
+  insecureSkipTLSVerify: boolean;
   note?: string;
 }
 

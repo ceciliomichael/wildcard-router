@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { Switch } from "../../components/Switch";
 import type { Route, RoutePayload } from "./types";
 
 interface RouteFormProps {
@@ -41,6 +42,9 @@ export function RouteForm({
   const [subdomain, setSubdomain] = useState(initial?.subdomain ?? "");
   const [destination, setDestination] = useState(initial?.destination ?? "");
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
+  const [insecureSkipTLSVerify, setInsecureSkipTLSVerify] = useState(
+    initial?.insecureSkipTLSVerify ?? false,
+  );
   const [note, setNote] = useState(initial?.note ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +97,7 @@ export function RouteForm({
         subdomain: subdomain.trim().toLowerCase(),
         destination: destination.trim(),
         enabled,
+        insecureSkipTLSVerify,
         note: note.trim() || undefined,
       });
     } catch (err) {
@@ -249,6 +254,46 @@ export function RouteForm({
             {destError && <p className="field-error">{destError}</p>}
           </div>
 
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              padding: "0.875rem 1rem",
+              background: "var(--color-surface-muted)",
+              borderRadius: "0.75rem",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  color: "var(--color-ink)",
+                }}
+              >
+                Skip upstream TLS verification
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--color-ink-muted)",
+                  marginTop: "0.125rem",
+                }}
+              >
+                Use for Proxmox or other HTTPS services with self-signed certs.
+              </div>
+            </div>
+            <Switch
+              checked={insecureSkipTLSVerify}
+              disabled={isLoading}
+              label="Skip upstream TLS verification"
+              onChange={setInsecureSkipTLSVerify}
+            />
+          </div>
+
           {/* Enabled toggle */}
           <div
             style={{
@@ -281,16 +326,12 @@ export function RouteForm({
                 Route will be active immediately
               </div>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={enabled}
-              className={`toggle-track ${enabled ? "on" : ""}`}
-              onClick={() => setEnabled((v) => !v)}
+            <Switch
+              checked={enabled}
               disabled={isLoading}
-            >
-              <span className="toggle-thumb" />
-            </button>
+              label="Enable route"
+              onChange={setEnabled}
+            />
           </div>
 
           {/* Note */}

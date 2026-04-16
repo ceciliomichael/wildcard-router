@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -73,7 +74,7 @@ func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (b
 		return false, nil
 	}
 
-	proxy, err := h.proxyFor(route.Destination)
+	proxy, err := h.proxyFor(route.Destination, route.InsecureSkipTLSVerify)
 	if err != nil {
 		h.logger.Printf("proxy setup failed for destination=%s: %v", route.Destination, err)
 		http.Error(writer, "proxy configuration error", http.StatusInternalServerError)
@@ -104,8 +105,9 @@ func (h *Handler) HasRoute(request *http.Request) (bool, error) {
 	return found, nil
 }
 
-func (h *Handler) proxyFor(destination string) (*httputil.ReverseProxy, error) {
-	key := strings.TrimSpace(destination)
+func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*httputil.ReverseProxy, error) {
+	trimmedDestination := strings.TrimSpace(destination)
+	key := proxyCacheKey(trimmedDestination, insecureSkipTLSVerify)
 
 	h.mu.RLock()
 	if existing, ok := h.proxies[key]; ok {
@@ -114,12 +116,15 @@ func (h *Handler) proxyFor(destination string) (*httputil.ReverseProxy, error) {
 	}
 	h.mu.RUnlock()
 
-	target, err := url.Parse(key)
+	target, err := url.Parse(trimmedDestination)
 	if err != nil {
 		return nil, fmt.Errorf("invalid destination URL: %w", err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
+	if insecureSkipTLSVerify {
+		proxy.Transport = insecureSkipVerifyTransport()
+	}
 	originalDirector := proxy.Director
 	proxy.Director = func(request *http.Request) {
 		originalHost := request.Host
@@ -135,7 +140,7 @@ func (h *Handler) proxyFor(destination string) (*httputil.ReverseProxy, error) {
 		}
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
-		h.logger.Printf("upstream error for %s: %v", key, err)
+		h.logger.Printf("upstream error for %s: %v", trimmedDestination, err)
 		http.Error(writer, "upstream unavailable", http.StatusBadGateway)
 	}
 
@@ -143,6 +148,16 @@ func (h *Handler) proxyFor(destination string) (*httputil.ReverseProxy, error) {
 	defer h.mu.Unlock()
 	h.proxies[key] = proxy
 	return proxy, nil
+}
+
+func proxyCacheKey(destination string, insecureSkipTLSVerify bool) string {
+	return fmt.Sprintf("%s|insecureTLS=%t", strings.TrimSpace(destination), insecureSkipTLSVerify)
+}
+
+func insecureSkipVerifyTransport() *http.Transport {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	return transport
 }
 
 func extractHost(request *http.Request, trustForwardedHost bool) string {

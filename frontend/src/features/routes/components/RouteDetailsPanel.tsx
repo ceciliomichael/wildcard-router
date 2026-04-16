@@ -199,6 +199,16 @@ export function RouteDetailsPanel({
           </a>
         </DetailRow>
 
+        <DetailRow label="Upstream TLS">
+          {route.insecureSkipTLSVerify ? (
+            <span className="badge badge-disabled">
+              TLS verification skipped
+            </span>
+          ) : (
+            <span>Certificate verified</span>
+          )}
+        </DetailRow>
+
         {showOwner && (
           <DetailRow label="Owner">
             <div style={{ display: "grid", gap: "0.2rem" }}>
