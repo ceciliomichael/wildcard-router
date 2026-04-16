@@ -106,8 +106,11 @@ func (h *Handler) HasRoute(request *http.Request) (bool, error) {
 }
 
 func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*httputil.ReverseProxy, error) {
-	trimmedDestination := strings.TrimSpace(destination)
-	key := proxyCacheKey(trimmedDestination, insecureSkipTLSVerify)
+	normalizedDestination, err := registry.NormalizeDestination(destination)
+	if err != nil {
+		return nil, fmt.Errorf("invalid destination URL: %w", err)
+	}
+	key := proxyCacheKey(normalizedDestination, insecureSkipTLSVerify)
 
 	h.mu.RLock()
 	if existing, ok := h.proxies[key]; ok {
@@ -116,7 +119,7 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 	}
 	h.mu.RUnlock()
 
-	target, err := url.Parse(trimmedDestination)
+	target, err := url.Parse(normalizedDestination)
 	if err != nil {
 		return nil, fmt.Errorf("invalid destination URL: %w", err)
 	}
@@ -140,7 +143,7 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 		}
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
-		h.logger.Printf("upstream error for %s: %v", trimmedDestination, err)
+		h.logger.Printf("upstream error for %s: %v", normalizedDestination, err)
 		http.Error(writer, "upstream unavailable", http.StatusBadGateway)
 	}
 

@@ -19,7 +19,8 @@ interface RouteFormProps {
 
 function isValidUrl(value: string): boolean {
   try {
-    const url = new URL(value);
+    const normalized = value.includes("://") ? value : `http://${value}`;
+    const url = new URL(normalized);
     return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
@@ -75,7 +76,7 @@ export function RouteForm({
     ? !destination.trim()
       ? "Destination is required."
       : !isValidUrl(destination.trim())
-        ? "Must be a valid http:// or https:// URL."
+        ? "Must be a valid http:// or https:// URL, or a host:port like localhost:3068."
         : null
     : null;
 
@@ -245,7 +246,7 @@ export function RouteForm({
               id="route-destination"
               type="url"
               className={`field-input mono ${destError ? "error" : ""}`}
-              placeholder="https://localhost:3000"
+              placeholder="https://localhost:3000 or localhost:3000"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               onBlur={() => setTouchedDest(true)}

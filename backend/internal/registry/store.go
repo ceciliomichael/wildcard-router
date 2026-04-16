@@ -119,7 +119,7 @@ func (s *Store) Lookup(subdomain string) (Route, bool, error) {
 		return Route{}, false, fmt.Errorf("lookup route: %w", err)
 	}
 
-	if err := validateDestination(record.Destination); err != nil {
+	if _, err := NormalizeDestination(record.Destination); err != nil {
 		return Route{}, false, fmt.Errorf("invalid destination for %q: %w", record.Subdomain, err)
 	}
 
@@ -300,9 +300,14 @@ func normalizeSubdomain(value string) string {
 }
 
 func normalizeAndValidateInput(subdomain string, destination string, note string) (normalizedInput, error) {
+	normalizedDestination, err := NormalizeDestination(destination)
+	if err != nil {
+		return normalizedInput{}, fmt.Errorf("invalid destination: %w", err)
+	}
+
 	result := normalizedInput{
 		subdomain:   normalizeSubdomain(subdomain),
-		destination: strings.TrimSpace(destination),
+		destination: normalizedDestination,
 		note:        strings.TrimSpace(note),
 	}
 
@@ -312,9 +317,6 @@ func normalizeAndValidateInput(subdomain string, destination string, note string
 	if !subdomainPattern.MatchString(result.subdomain) {
 		return normalizedInput{}, fmt.Errorf("subdomain format is invalid")
 	}
-	if err := validateDestination(result.destination); err != nil {
-		return normalizedInput{}, fmt.Errorf("invalid destination: %w", err)
-	}
 	if len(result.note) > 240 {
 		return normalizedInput{}, fmt.Errorf("note must be 240 characters or less")
 	}
@@ -322,20 +324,30 @@ func normalizeAndValidateInput(subdomain string, destination string, note string
 	return result, nil
 }
 
-func validateDestination(raw string) error {
-	parsed, err := url.Parse(strings.TrimSpace(raw))
+func NormalizeDestination(raw string) (string, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", fmt.Errorf("destination is required")
+	}
+
+	parsedInput := trimmed
+	if !strings.Contains(parsedInput, "://") {
+		parsedInput = "http://" + parsedInput
+	}
+
+	parsed, err := url.Parse(parsedInput)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return fmt.Errorf("scheme must be http or https")
+		return "", fmt.Errorf("scheme must be http or https")
 	}
 	if parsed.Host == "" {
-		return fmt.Errorf("host is required")
+		return "", fmt.Errorf("host is required")
 	}
 
-	return nil
+	return parsed.String(), nil
 }
 
 type normalizedInput struct {
