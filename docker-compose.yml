@@ -51,6 +51,7 @@ services:
   frontend:
     build:
       context: ./frontend
+    user: "0:0"
     restart: unless-stopped
     depends_on:
       - backend
