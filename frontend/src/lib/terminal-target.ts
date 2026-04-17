@@ -131,21 +131,52 @@ function runDockerCommand(args: string[], cwd?: string): string {
   }).trim();
 }
 
+function findRunningContainerIdByComposeLabels(serviceName: string): string | null {
+  const args = [
+    "ps",
+    "--filter",
+    `label=com.docker.compose.service=${serviceName}`,
+    "--format",
+    "{{.ID}}",
+  ];
+
+  const composeProject = process.env.TERMINAL_DOCKER_PROJECT?.trim();
+  if (composeProject && composeProject.length > 0) {
+    args.splice(3, 0, "--filter", `label=com.docker.compose.project=${composeProject}`);
+  }
+
+  const output = runDockerCommand(args);
+  if (!output) {
+    return null;
+  }
+
+  const [firstContainerId] = output
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  return firstContainerId ?? null;
+}
+
 function resolveDockerContainerIdStrict(): string {
   const explicitContainer = process.env.TERMINAL_DOCKER_CONTAINER?.trim();
   if (explicitContainer) {
     return explicitContainer;
   }
 
+  const serviceName =
+    process.env.TERMINAL_DOCKER_SERVICE?.trim() || DEFAULT_DOCKER_SERVICE;
+  const labeledContainerId = findRunningContainerIdByComposeLabels(serviceName);
+  if (labeledContainerId) {
+    return labeledContainerId;
+  }
+
   const composeDirectory = resolveComposeDirectory();
   if (!composeDirectory) {
     throw new Error(
-      "Cannot resolve docker compose directory. Set TERMINAL_DOCKER_COMPOSE_DIR or TERMINAL_DOCKER_CONTAINER.",
+      `Cannot resolve docker container for service "${serviceName}". Set TERMINAL_DOCKER_CONTAINER, TERMINAL_DOCKER_PROJECT, or TERMINAL_DOCKER_COMPOSE_DIR.`,
     );
   }
-
-  const serviceName =
-    process.env.TERMINAL_DOCKER_SERVICE?.trim() || DEFAULT_DOCKER_SERVICE;
   const containerId = runDockerCommand(
     ["compose", "ps", "-q", serviceName],
     composeDirectory,

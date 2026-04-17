@@ -53,7 +53,8 @@ Notes:
 - Terminal sessions default to `TERMINAL_TARGET=auto`, which tries the Docker Compose `backend` container first and falls back to the host shell.
 - Set `TERMINAL_TARGET=docker` to force container shell usage, or `TERMINAL_TARGET=host` to force local shell usage.
 - In Docker Compose mode, docker-target terminal access requires frontend runtime access to Docker (`docker-cli` + `/var/run/docker.sock`), which is included in this repo compose setup.
-- If your compose file is not in the current/parent directory, set `TERMINAL_DOCKER_COMPOSE_DIR` or `TERMINAL_DOCKER_CONTAINER`.
+- If multiple Compose projects run on the same host, set `TERMINAL_DOCKER_PROJECT` to pin the right stack.
+- If label-based detection is unavailable, set `TERMINAL_DOCKER_COMPOSE_DIR` or `TERMINAL_DOCKER_CONTAINER`.
 - For tunnel-based development, set `NEXT_ALLOWED_DEV_ORIGINS` to your tunnel host if needed.
 - The frontend config already includes common tunnel domains used in development.
 - The route editor includes an option for upstream TLS verification, which is useful for self-signed services.
