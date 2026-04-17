@@ -66,6 +66,7 @@ export function DashboardTopBar({
         }}
       >
         <div
+          className="dashboard-topbar-brand"
           style={{
             display: "flex",
             alignItems: "center",
@@ -102,31 +103,35 @@ export function DashboardTopBar({
             </svg>
           </span>
           <div style={{ minWidth: 0 }}>
-            <div
+            <span
+              className="dashboard-topbar-brand-title"
               style={{
                 fontWeight: "800",
-                fontSize: "0.98rem",
+                fontSize: "0.95rem",
                 color: "var(--color-ink)",
                 letterSpacing: "-0.02em",
-                lineHeight: 1.2,
+                lineHeight: 1.1,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
+                display: "block",
               }}
             >
               Wildcard Catcher
-            </div>
-            <div
+            </span>
+            <span
+              className="dashboard-topbar-brand-subtitle"
               style={{
-                fontSize: "0.75rem",
+                fontSize: "0.74rem",
                 color: "var(--color-ink-secondary)",
-                marginTop: "0.1rem",
+                lineHeight: 1.1,
+                display: "block",
               }}
             >
               {user.role === "admin"
-                ? "Admin control surface"
+                ? "Admin control interface"
                 : "Personal route workspace"}
-            </div>
+            </span>
           </div>
         </div>
 
@@ -136,7 +141,6 @@ export function DashboardTopBar({
             display: "flex",
             alignItems: "center",
             gap: "0.4rem",
-            flexWrap: "wrap",
           }}
         >
           {navigation.map((item) => {
@@ -166,9 +170,10 @@ export function DashboardTopBar({
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
+            justifyContent: "flex-start",
             gap: "0.625rem",
             minWidth: 0,
+            flexWrap: "wrap",
           }}
         >
           {actions}
@@ -277,25 +282,100 @@ export function DashboardTopBar({
           color: var(--color-ink);
         }
 
-        @media (min-width: 960px) {
+        .dashboard-topbar-shell {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .dashboard-topbar-brand {
+          order: 1;
+          min-width: 0;
+        }
+
+        .dashboard-topbar-actions {
+          order: 2;
+          width: auto;
+          justify-content: flex-end;
+          flex-wrap: nowrap;
+        }
+
+        .dashboard-topbar-actions .custom-dropdown {
+          width: auto;
+          min-width: 0;
+          margin-left: 0;
+        }
+
+        .dashboard-topbar-actions .custom-dropdown__trigger {
+          min-height: 2.5rem;
+          padding-left: 0.5rem;
+          padding-right: 0.5rem;
+        }
+
+        .dashboard-topbar-nav {
+          order: 3;
+          grid-column: 1 / -1;
+          min-width: 0;
+          justify-content: center;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 0.2rem;
+          scrollbar-width: thin;
+        }
+
+        @media (min-width: 768px) {
           .dashboard-topbar-shell {
             grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
           }
-        }
 
-        @media (max-width: 959px) {
+          .dashboard-topbar-brand,
+          .dashboard-topbar-actions,
           .dashboard-topbar-nav {
-            order: 3;
+            order: 0;
           }
 
           .dashboard-topbar-actions {
+            justify-content: flex-end;
+            width: auto;
+            flex-wrap: nowrap;
+            justify-self: end;
+          }
+
+          .dashboard-topbar-actions .custom-dropdown {
+            width: auto;
+            margin-left: 0;
+          }
+
+          .dashboard-topbar-nav {
+            grid-column: auto;
             justify-content: flex-start;
+            overflow-x: visible;
+            padding-bottom: 0;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .dashboard-topbar-link {
+            white-space: nowrap;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .dashboard-topbar-brand-title {
+            font-size: 0.92rem;
+          }
+
+          .dashboard-topbar-brand-subtitle {
+            font-size: 0.72rem;
+          }
+
+          .dashboard-topbar-profile-copy {
+            display: none;
           }
         }
 
         @media (max-width: 480px) {
-          .dashboard-topbar-profile-copy {
-            display: none;
+          .dashboard-topbar-shell {
+            gap: 0.6rem;
+            padding: 0.75rem 0.85rem;
           }
         }
       `}</style>
