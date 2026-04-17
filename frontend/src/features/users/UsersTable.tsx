@@ -19,6 +19,7 @@ interface UsersTableProps {
   onSortKeyChange: (value: "updatedAt" | "name") => void;
   onRefresh: () => void;
   onAdd: () => void;
+  onEdit: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
   onRegenerate: (user: ManagedUser) => void;
   isActionUserId: string | null;
@@ -58,6 +59,7 @@ export function UsersTable({
   onSortKeyChange,
   onRefresh,
   onAdd,
+  onEdit,
   onDelete,
   onRegenerate,
   isActionUserId,
@@ -253,6 +255,7 @@ export function UsersTable({
                   user={user}
                   currentUserId={currentUserId}
                   isActionUserId={isActionUserId}
+                  onEdit={onEdit}
                   onDelete={onDelete}
                   onRegenerate={onRegenerate}
                 />
@@ -278,6 +281,7 @@ export function UsersTable({
                       user={user}
                       currentUserId={currentUserId}
                       isActionUserId={isActionUserId}
+                      onEdit={onEdit}
                       onDelete={onDelete}
                       onRegenerate={onRegenerate}
                     />
@@ -317,6 +321,7 @@ interface UserCardProps {
   user: ManagedUser;
   currentUserId: string | null;
   isActionUserId: string | null;
+  onEdit: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
   onRegenerate: (user: ManagedUser) => void;
 }
@@ -325,6 +330,7 @@ function UserCard({
   user,
   currentUserId,
   isActionUserId,
+  onEdit,
   onDelete,
   onRegenerate,
 }: UserCardProps) {
@@ -400,6 +406,32 @@ function UserCard({
             className="btn btn-ghost btn-icon btn-sm"
             onClick={(event) => {
               event.stopPropagation();
+              onEdit(user);
+            }}
+            disabled={busy}
+            aria-label={`Edit ${user.name}`}
+            title="Edit user"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <title>Edit</title>
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon btn-sm"
+            onClick={(event) => {
+              event.stopPropagation();
               onRegenerate(user);
             }}
             disabled={busy}
@@ -459,6 +491,7 @@ interface UserRowProps {
   user: ManagedUser;
   currentUserId: string | null;
   isActionUserId: string | null;
+  onEdit: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
   onRegenerate: (user: ManagedUser) => void;
 }
@@ -467,6 +500,7 @@ function UserRow({
   user,
   currentUserId,
   isActionUserId,
+  onEdit,
   onDelete,
   onRegenerate,
 }: UserRowProps) {
@@ -506,6 +540,32 @@ function UserRow({
             justifyContent: "flex-end",
           }}
         >
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon btn-sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit(user);
+            }}
+            disabled={busy}
+            aria-label={`Edit ${user.name}`}
+            title="Edit user"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <title>Edit</title>
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
           <button
             type="button"
             className="btn btn-ghost btn-icon btn-sm"

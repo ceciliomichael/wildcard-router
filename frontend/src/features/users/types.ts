@@ -1,9 +1,11 @@
+export type UserRole = "admin" | "user";
+
 export interface ManagedUser {
   id: string;
   name: string;
   username: string;
   email: string;
-  role: "admin" | "user";
+  role: UserRole;
   isBootstrap: boolean;
   createdAt: string;
   updatedAt: string;
@@ -12,7 +14,15 @@ export interface ManagedUser {
 export interface CreateUserPayload {
   name: string;
   username: string;
-  role: "admin" | "user";
+  email?: string;
+  role: UserRole;
+}
+
+export interface UpdateUserPayload {
+  name: string;
+  username: string;
+  email: string;
+  role: UserRole;
 }
 
 export interface CreateUserResponse {

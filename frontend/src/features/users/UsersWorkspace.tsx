@@ -8,8 +8,10 @@ import {
   deleteUser,
   listUsers,
   regenerateUserPassword,
+  updateUser,
 } from "./api";
 import { CreateUserDialog } from "./CreateUserDialog";
+import { EditUserDialog } from "./EditUserDialog";
 import { PasswordRevealDialog } from "./PasswordRevealDialog";
 import type { ManagedUser } from "./types";
 import { UsersTable } from "./UsersTable";
@@ -29,6 +31,8 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [creatingOpen, setCreatingOpen] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
+  const [isEditingUser, setIsEditingUser] = useState(false);
   const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isActionUserId, setIsActionUserId] = useState<string | null>(null);
@@ -116,9 +120,11 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
   async function handleCreateUser(payload: {
     name: string;
     username: string;
+    email?: string;
     role: "admin" | "user";
   }) {
     setIsCreatingUser(true);
+    setBannerError(null);
     try {
       const response = await createUser(payload);
       setUsers((prev) => [response.user, ...prev]);
@@ -150,6 +156,7 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
     }
 
     setIsDeleting(true);
+    setBannerError(null);
     try {
       await deleteUser(deletingUser.id);
       setUsers((prev) => prev.filter((user) => user.id !== deletingUser.id));
@@ -173,6 +180,7 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
 
   async function handleRegeneratePassword(user: ManagedUser) {
     setIsActionUserId(user.id);
+    setBannerError(null);
     try {
       const response = await regenerateUserPassword(user.id);
       setUsers((prev) =>
@@ -198,6 +206,47 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
       setBannerError("Failed to regenerate the password.");
     } finally {
       setIsActionUserId(null);
+    }
+  }
+
+  async function handleEditUser(payload: {
+    name: string;
+    username: string;
+    email: string;
+    role: "admin" | "user";
+  }) {
+    if (!editingUser) {
+      return;
+    }
+
+    setIsEditingUser(true);
+    setBannerError(null);
+    try {
+      const response = await updateUser(editingUser.id, payload);
+      setUsers((prev) =>
+        prev.map((entry) =>
+          entry.id === response.user.id ? response.user : entry,
+        ),
+      );
+
+      setEditingUser(null);
+
+      if (response.user.id === currentUserId) {
+        await auth.refresh();
+      }
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "status" in err &&
+        Number((err as { status: unknown }).status) === 401
+      ) {
+        await handleUnauthorized();
+        return;
+      }
+      throw err;
+    } finally {
+      setIsEditingUser(false);
     }
   }
 
@@ -265,6 +314,7 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
             onSortKeyChange={setSortKey}
             onRefresh={() => void fetchUsers(true)}
             onAdd={() => setCreatingOpen(true)}
+            onEdit={(user) => setEditingUser(user)}
             onDelete={(user) => setDeletingUser(user)}
             onRegenerate={(user) => void handleRegeneratePassword(user)}
             isActionUserId={isActionUserId}
@@ -277,6 +327,15 @@ export function UsersWorkspace({ auth }: UsersWorkspaceProps) {
           isLoading={isCreatingUser}
           onClose={() => setCreatingOpen(false)}
           onSubmit={handleCreateUser}
+        />
+      ) : null}
+
+      {editingUser ? (
+        <EditUserDialog
+          user={editingUser}
+          isLoading={isEditingUser}
+          onClose={() => setEditingUser(null)}
+          onSubmit={handleEditUser}
         />
       ) : null}
 

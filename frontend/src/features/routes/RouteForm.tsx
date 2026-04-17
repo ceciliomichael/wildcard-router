@@ -304,7 +304,7 @@ export function RouteForm({
                   marginTop: "0.125rem",
                 }}
               >
-                Use for Proxmox or other HTTPS services with self-signed certs.
+                Used for HTTPS services with self-signed certs.
               </div>
             </div>
             <Switch

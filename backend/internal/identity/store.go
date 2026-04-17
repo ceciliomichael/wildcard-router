@@ -55,6 +55,13 @@ type CreateUserInput struct {
 	Role     Role   `json:"role"`
 }
 
+type UpdateUserInput struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     Role   `json:"role"`
+}
+
 type Store struct {
 	users    *mongo.Collection
 	sessions *mongo.Collection
@@ -414,6 +421,106 @@ func (s *Store) CreateUser(ctx context.Context, input CreateUserInput) (User, st
 	record.ID = insertedID
 
 	return record.toPublic(), password, nil
+}
+
+func (s *Store) UpdateUser(ctx context.Context, targetID string, input UpdateUserInput) (User, error) {
+	normalizedTargetID := strings.TrimSpace(targetID)
+	if normalizedTargetID == "" {
+		return User{}, fmt.Errorf("user id is required")
+	}
+
+	targetObjectID, err := primitive.ObjectIDFromHex(normalizedTargetID)
+	if err != nil {
+		return User{}, fmt.Errorf("invalid user id: %w", err)
+	}
+
+	var target userRecord
+	if err := s.users.FindOne(ctx, bson.M{"_id": targetObjectID}).Decode(&target); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return User{}, ErrUserNotFound
+		}
+		return User{}, fmt.Errorf("find target user: %w", err)
+	}
+
+	if target.IsBootstrap {
+		return User{}, ErrUserProtected
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return User{}, fmt.Errorf("name is required")
+	}
+	if len(name) > 120 {
+		return User{}, fmt.Errorf("name is too long")
+	}
+
+	username := strings.TrimSpace(input.Username)
+	if username == "" {
+		return User{}, fmt.Errorf("username is required")
+	}
+	normalizedUsername := normalizeUsername(username)
+	if normalizedUsername == "" {
+		return User{}, fmt.Errorf("username is required")
+	}
+
+	email := strings.TrimSpace(input.Email)
+	if email == "" {
+		return User{}, fmt.Errorf("email is required")
+	}
+	normalizedEmail := normalizeEmail(email)
+	if normalizedEmail == "" {
+		return User{}, fmt.Errorf("email is required")
+	}
+
+	role := input.Role
+	if role == "" {
+		return User{}, fmt.Errorf("role is required")
+	}
+	if role != RoleAdmin && role != RoleUser {
+		return User{}, fmt.Errorf("role must be admin or user")
+	}
+	if target.Role == RoleAdmin && role != RoleAdmin {
+		adminCount, err := s.users.CountDocuments(ctx, bson.M{"role": RoleAdmin})
+		if err != nil {
+			return User{}, fmt.Errorf("count admin users: %w", err)
+		}
+		if adminCount <= 1 {
+			return User{}, ErrUserProtected
+		}
+	}
+
+	now := time.Now().UTC()
+	update := bson.M{
+		"name":               name,
+		"username":           username,
+		"normalizedUsername": normalizedUsername,
+		"email":              normalizedEmail,
+		"normalizedEmail":    normalizedEmail,
+		"role":               role,
+		"updatedAt":          now,
+	}
+
+	_, err = s.users.UpdateOne(
+		ctx,
+		bson.M{"_id": targetObjectID},
+		bson.M{"$set": update},
+	)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return User{}, ErrDuplicateUser
+		}
+		return User{}, fmt.Errorf("update user: %w", err)
+	}
+
+	target.Name = name
+	target.Username = username
+	target.NormalizedUsername = normalizedUsername
+	target.Email = normalizedEmail
+	target.NormalizedEmail = normalizedEmail
+	target.Role = role
+	target.UpdatedAt = now
+
+	return target.toPublic(), nil
 }
 
 func (s *Store) DeleteUser(ctx context.Context, targetID string) error {

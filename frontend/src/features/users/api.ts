@@ -7,6 +7,7 @@ import type {
   CurrentUserResponse,
   ManagedUser,
   PasswordRotationResponse,
+  UpdateUserPayload,
 } from "./types";
 
 const USERS_API_PATH = "/api/users";
@@ -60,6 +61,22 @@ export async function createUser(
   });
   if (!res.ok) throw await parseError(res);
   return (await res.json()) as CreateUserResponse;
+}
+
+export async function updateUser(
+  userId: string,
+  payload: UpdateUserPayload,
+): Promise<{ user: ManagedUser }> {
+  const res = await fetch(`${USERS_API_PATH}/${userId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await parseError(res);
+  return (await res.json()) as { user: ManagedUser };
 }
 
 export async function deleteUser(userId: string): Promise<void> {

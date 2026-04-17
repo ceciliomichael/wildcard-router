@@ -231,6 +231,29 @@ func (h *Handler) handleUsersItem(writer http.ResponseWriter, request *http.Requ
 		}
 
 		writer.WriteHeader(http.StatusNoContent)
+	case http.MethodPatch:
+		var payload identity.UpdateUserInput
+		if err := decodeBody(request, &payload); err != nil {
+			h.writeError(writer, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		updated, err := h.identity.UpdateUser(ctx, targetID, payload)
+		if err != nil {
+			switch {
+			case errors.Is(err, identity.ErrUserNotFound):
+				h.writeError(writer, http.StatusNotFound, err.Error())
+			case errors.Is(err, identity.ErrUserProtected):
+				h.writeError(writer, http.StatusForbidden, err.Error())
+			case errors.Is(err, identity.ErrDuplicateUser):
+				h.writeError(writer, http.StatusConflict, err.Error())
+			default:
+				h.writeError(writer, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		h.writeJSON(writer, http.StatusOK, map[string]any{"user": updated})
 	case http.MethodPost:
 		if len(segments) != 2 || segments[1] != "password" {
 			h.writeError(writer, http.StatusNotFound, "not found")
@@ -253,7 +276,7 @@ func (h *Handler) handleUsersItem(writer http.ResponseWriter, request *http.Requ
 			"generatedPassword": generatedPassword,
 		})
 	default:
-		h.writeMethodNotAllowed(writer, http.MethodDelete, http.MethodPost)
+		h.writeMethodNotAllowed(writer, http.MethodDelete, http.MethodPatch, http.MethodPost)
 	}
 }
 
