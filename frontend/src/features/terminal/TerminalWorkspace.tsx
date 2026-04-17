@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  fetchSshTerminalTarget,
+  type SshTerminalTarget,
+  saveSshTerminalTarget,
+} from "./sshTargetApi";
 import { TerminalPane } from "./TerminalPane";
+import { TerminalSshGate } from "./TerminalSshGate";
+import { disposeTerminalRuntime } from "./terminal-runtime";
 
 interface TerminalTab {
   id: string;
@@ -82,7 +89,7 @@ function normalizeTerminalState(state: PersistedTerminalState): TerminalState {
   const activeTabExists = tabs.some((tab) => tab.id === state.activeTabId);
 
   return {
-    activeTabId: activeTabExists ? state.activeTabId : tabs[0]?.id ?? null,
+    activeTabId: activeTabExists ? state.activeTabId : (tabs[0]?.id ?? null),
     tabs,
   };
 }
@@ -115,12 +122,49 @@ function readPersistedState(key: string): TerminalState | null {
 export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
   const [state, setState] = useState<TerminalState>(createDefaultState);
   const [isStateReady, setIsStateReady] = useState(false);
+  const [sshTarget, setSshTarget] = useState<SshTerminalTarget | null>(null);
+  const [isSshReady, setIsSshReady] = useState(false);
+  const [sshError, setSshError] = useState<string | null>(null);
 
   useEffect(() => {
     const restoredState = readPersistedState(persistenceKey);
     setState(restoredState ?? createDefaultState());
     setIsStateReady(true);
   }, [persistenceKey]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSshTarget = async (): Promise<void> => {
+      try {
+        const target = await fetchSshTerminalTarget();
+        if (!isMounted) {
+          return;
+        }
+        setSshTarget(target);
+        setSshError(null);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+        setSshError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load SSH terminal target.",
+        );
+        setSshTarget(null);
+      } finally {
+        if (isMounted) {
+          setIsSshReady(true);
+        }
+      }
+    };
+
+    void loadSshTarget();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isStateReady) {
@@ -131,10 +175,9 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
   }, [isStateReady, persistenceKey, state]);
 
   const { activeTabId, tabs } = state;
-
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
 
-  if (!isStateReady) {
+  if (!isStateReady || !isSshReady) {
     return null;
   }
 
@@ -150,6 +193,8 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
   };
 
   const handleCloseTab = (tabId: string): void => {
+    disposeTerminalRuntime(tabId);
+
     setState((currentState) => {
       if (currentState.tabs.length === 0) {
         return currentState;
@@ -185,17 +230,53 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
     });
   };
 
+  const handleConnectSsh = async (input: {
+    username: string;
+    host: string;
+    port: number | null;
+    password: string | null;
+  }): Promise<void> => {
+    try {
+      const nextTarget = await saveSshTerminalTarget(input);
+      setSshTarget(nextTarget);
+      setSshError(null);
+
+      setState((currentState) => {
+        if (currentState.tabs.length > 0) {
+          return currentState;
+        }
+        return createDefaultState();
+      });
+    } catch (error) {
+      setSshError(
+        error instanceof Error
+          ? error.message
+          : "Failed to configure SSH terminal target.",
+      );
+    }
+  };
+
+  if (!sshTarget) {
+    return (
+      <section className="terminal-workspace-shell is-empty">
+        <div className="terminal-workspace-body">
+          <TerminalSshGate
+            isLoading={false}
+            error={sshError}
+            onConnect={handleConnectSsh}
+          />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className={`terminal-workspace-shell${tabs.length === 0 ? " is-empty" : ""}`}
     >
       {tabs.length > 0 ? (
-        <header
-          className="terminal-workspace-header"
-        >
-          <div
-            className="terminal-workspace-tabs"
-          >
+        <header className="terminal-workspace-header">
+          <div className="terminal-workspace-tabs">
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
 
@@ -231,9 +312,7 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
               );
             })}
           </div>
-          <div
-            className="terminal-workspace-tab terminal-workspace-tab-add terminal-workspace-tab-add-right"
-          >
+          <div className="terminal-workspace-tab terminal-workspace-tab-add terminal-workspace-tab-add-right">
             <button
               type="button"
               onClick={handleAddTab}
@@ -246,9 +325,7 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
         </header>
       ) : null}
 
-      <div
-        className="terminal-workspace-body"
-      >
+      <div className="terminal-workspace-body">
         {tabs.length === 0 ? (
           <div className="terminal-workspace-empty-state">
             <div className="terminal-workspace-empty-icon" aria-hidden="true">
@@ -259,14 +336,34 @@ export function TerminalWorkspace({ persistenceKey }: TerminalWorkspaceProps) {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M7 10L10 12L7 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12.5 14H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <title>Terminal</title>
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="14"
+                  rx="2"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M7 10L10 12L7 14"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12.5 14H17"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
             <p className="terminal-workspace-empty-title">No terminal open</p>
             <p className="terminal-workspace-empty-description">
-              Start a new session to run commands here.
+              Start a new session to run commands through your SSH target.
             </p>
             <button
               type="button"

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
-import pty from "node-pty";
-import { resolveTerminalSpawnTarget } from "./terminal-target";
+import { Client, type ClientChannel } from "ssh2";
+import { requireTerminalSshTarget } from "./terminal-ssh-target";
 
 export interface TerminalDimensions {
   cols: number;
@@ -16,15 +16,28 @@ export type TerminalOpenResult =
       created: boolean;
     }
   | {
+      status: "missing_target";
+      message: string;
+    }
+  | {
       status: "forbidden";
     };
 
 type TerminalOutputListener = (chunk: string) => void;
+type TerminalExitListener = () => void;
+
+interface TerminalProcess {
+  write(data: string): void;
+  resize(cols: number, rows: number): void;
+  kill(): void;
+  onData(listener: TerminalOutputListener): void;
+  onExit(listener: TerminalExitListener): void;
+}
 
 interface TerminalSession {
   id: string;
   ownerUserId: string;
-  pty: pty.IPty;
+  process: TerminalProcess;
   listeners: Set<TerminalOutputListener>;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
   lastActivityAt: number;
@@ -46,6 +59,140 @@ export const TERMINAL_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 const textEncoder = new TextEncoder();
 const terminalSessions = new Map<string, TerminalSession>();
+
+class SshTerminalProcess implements TerminalProcess {
+  private readonly client = new Client();
+  private readonly dataListeners = new Set<TerminalOutputListener>();
+  private readonly exitListeners = new Set<TerminalExitListener>();
+  private readonly pendingWrites: string[] = [];
+  private channel: ClientChannel | null = null;
+  private hasExited = false;
+
+  constructor(
+    target: ReturnType<typeof requireTerminalSshTarget>,
+    dimensions: TerminalDimensions,
+  ) {
+    this.client.on("ready", () => {
+      this.client.shell(
+        {
+          term: "xterm-256color",
+          cols: dimensions.cols,
+          rows: dimensions.rows,
+        },
+        (error, channel) => {
+          if (error) {
+            this.emitData(`\r\n[ssh] Failed to open shell: ${error.message}\r\n`);
+            this.kill();
+            return;
+          }
+
+          this.channel = channel;
+          for (const pendingWrite of this.pendingWrites) {
+            this.channel.write(pendingWrite);
+          }
+          this.pendingWrites.length = 0;
+
+          channel.on("data", (chunk: Buffer | string) => {
+            this.emitData(
+              typeof chunk === "string" ? chunk : chunk.toString("utf8"),
+            );
+          });
+
+          channel.on("close", () => {
+            this.handleExit();
+          });
+        },
+      );
+    });
+
+    this.client.on(
+      "keyboard-interactive",
+      (_name, _instructions, _lang, prompts, finish) => {
+        if (target.password) {
+          finish(prompts.map(() => target.password ?? ""));
+          return;
+        }
+        finish([]);
+      },
+    );
+
+    this.client.on("error", (error) => {
+      this.emitData(`\r\n[ssh] ${error.message}\r\n`);
+      this.handleExit();
+    });
+
+    this.client.on("close", () => {
+      this.handleExit();
+    });
+
+    this.client.connect({
+      host: target.host,
+      port: target.port ?? 22,
+      username: target.username,
+      password: target.password ?? undefined,
+      tryKeyboard: true,
+      readyTimeout: 20_000,
+      // Production default for now: accept host key automatically.
+      hostVerifier: () => true,
+    });
+  }
+
+  write(data: string): void {
+    if (this.hasExited) {
+      return;
+    }
+
+    if (!this.channel) {
+      this.pendingWrites.push(data);
+      return;
+    }
+
+    this.channel.write(data);
+  }
+
+  resize(cols: number, rows: number): void {
+    if (!this.channel || this.hasExited) {
+      return;
+    }
+
+    this.channel.setWindow(rows, cols, 0, 0);
+  }
+
+  kill(): void {
+    if (this.hasExited) {
+      return;
+    }
+
+    this.handleExit();
+    this.channel?.close();
+    this.client.end();
+  }
+
+  onData(listener: TerminalOutputListener): void {
+    this.dataListeners.add(listener);
+  }
+
+  onExit(listener: TerminalExitListener): void {
+    this.exitListeners.add(listener);
+  }
+
+  private emitData(chunk: string): void {
+    for (const listener of this.dataListeners) {
+      listener(chunk);
+    }
+  }
+
+  private handleExit(): void {
+    if (this.hasExited) {
+      return;
+    }
+
+    this.hasExited = true;
+    for (const listener of this.exitListeners) {
+      listener();
+    }
+  }
+}
 
 function sanitizeDimension(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
@@ -106,23 +253,8 @@ function createTerminalSession(
   ownerUserId: string,
   dimensions: TerminalDimensions,
 ): TerminalSession {
-  const target = resolveTerminalSpawnTarget();
-  let spawnedPty: pty.IPty;
-  try {
-    spawnedPty = pty.spawn(target.command, target.args, {
-      cols: dimensions.cols,
-      rows: dimensions.rows,
-      cwd: target.cwd,
-      name: "xterm-256color",
-      env: target.env,
-    });
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown terminal spawn error.";
-    throw new Error(
-      `Failed to spawn terminal process "${target.command} ${target.args.join(" ")}": ${errorMessage}`,
-    );
-  }
+  const target = requireTerminalSshTarget(ownerUserId);
+  const process = new SshTerminalProcess(target, dimensions);
 
   const session: TerminalSession = {
     id: sessionId,
@@ -130,17 +262,17 @@ function createTerminalSession(
     listeners: new Set<TerminalOutputListener>(),
     cleanupTimer: null,
     lastActivityAt: Date.now(),
-    pty: spawnedPty,
+    process,
   };
 
-  session.pty.onData((chunk) => {
+  session.process.onData((chunk) => {
     touchSession(session);
     for (const listener of session.listeners) {
       listener(chunk);
     }
   });
 
-  session.pty.onExit(() => {
+  session.process.onExit(() => {
     destroyTerminalSession(session.id);
   });
 
@@ -166,16 +298,26 @@ function getOrCreateTerminalSession(
       return { status: "forbidden" };
     }
 
-    existing.pty.resize(cols, rows);
+    existing.process.resize(cols, rows);
     touchSession(existing);
     return { status: "ok", session: existing, created: false };
   }
 
-  return {
-    status: "ok",
-    session: createTerminalSession(sessionId, ownerUserId, { cols, rows }),
-    created: true,
-  };
+  try {
+    return {
+      status: "ok",
+      session: createTerminalSession(sessionId, ownerUserId, { cols, rows }),
+      created: true,
+    };
+  } catch (error) {
+    return {
+      status: "missing_target",
+      message:
+        error instanceof Error
+          ? error.message
+          : "SSH target is not configured.",
+    };
+  }
 }
 
 export function createTerminalEventStream(
@@ -236,7 +378,7 @@ export function writeTerminalInput(
     return "forbidden";
   }
 
-  session.pty.write(data);
+  session.process.write(data);
   touchSession(session);
   return "ok";
 }
@@ -257,7 +399,7 @@ export function resizeTerminalSession(
 
   const cols = sanitizeDimension(dimensions.cols, DEFAULT_TERMINAL_COLUMNS);
   const rows = sanitizeDimension(dimensions.rows, DEFAULT_TERMINAL_ROWS);
-  session.pty.resize(cols, rows);
+  session.process.resize(cols, rows);
   touchSession(session);
   return "ok";
 }
@@ -274,7 +416,17 @@ export function destroyTerminalSession(sessionId: string): void {
 
   session.listeners.clear();
   terminalSessions.delete(sessionId);
-  session.pty.kill();
+  session.process.kill();
+}
+
+export function destroyTerminalSessionsByOwner(ownerUserId: string): void {
+  const sessionIds = [...terminalSessions.values()]
+    .filter((session) => session.ownerUserId === ownerUserId)
+    .map((session) => session.id);
+
+  for (const sessionId of sessionIds) {
+    destroyTerminalSession(sessionId);
+  }
 }
 
 export function hasTerminalSession(sessionId: string): boolean {

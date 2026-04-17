@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef } from "react";
+import { acquireTerminalRuntime } from "./terminal-runtime";
 
 interface TerminalSize {
   cols: number;
@@ -38,18 +39,6 @@ const TERMINAL_THEME = {
   yellow: "#fcd34d",
 };
 
-function decodeBase64Payload(payload: string): string {
-  if (payload.length === 0) {
-    return "";
-  }
-
-  const binaryString = window.atob(payload);
-  const bytes = Uint8Array.from(binaryString, (character) =>
-    character.charCodeAt(0),
-  );
-  return new TextDecoder().decode(bytes);
-}
-
 function areSizesEqual(left: TerminalSize, right: TerminalSize): boolean {
   return left.cols === right.cols && left.rows === right.rows;
 }
@@ -59,7 +48,6 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
-  const isConnectedRef = useRef(false);
   const isActiveRef = useRef(isActive);
 
   useEffect(() => {
@@ -86,22 +74,18 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
+    const runtime = acquireTerminalRuntime(sessionId, {
+      cols: terminal.cols,
+      rows: terminal.rows,
+    });
+
     const sendResize = (size: TerminalSize): void => {
       if (areSizesEqual(lastKnownSizeRef.current, size)) {
         return;
       }
 
       lastKnownSizeRef.current = size;
-      void fetch("/api/terminal/resize", {
-        body: JSON.stringify({
-          sessionId,
-          ...size,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      }).catch(() => undefined);
+      runtime.resize(size);
     };
 
     const fitAndResize = (): void => {
@@ -127,43 +111,29 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
 
     fitAndResize();
 
-    const eventSource = new EventSource(
-      `/api/terminal/stream?sessionId=${encodeURIComponent(sessionId)}&cols=${terminal.cols}&rows=${terminal.rows}`,
-    );
+    const outputAttachment = runtime.attachOutput((chunk) => {
+      terminal.write(chunk);
+    });
+    if (outputAttachment.snapshot.length > 0) {
+      terminal.write(outputAttachment.snapshot);
+    }
 
-    eventSource.onopen = () => {
-      isConnectedRef.current = true;
-      terminal.writeln("Terminal connected.");
-      fitAndResize();
-    };
-
-    eventSource.onmessage = (event) => {
-      const output = decodeBase64Payload(event.data);
-      if (output.length > 0) {
-        terminal.write(output);
+    const unsubscribeConnection = runtime.subscribeConnection((connected) => {
+      if (connected) {
+        fitAndResize();
       }
-    };
-
-    eventSource.onerror = () => {
-      isConnectedRef.current = false;
+    });
+    const unsubscribeError = runtime.subscribeError((message) => {
       terminal.writeln("");
-      terminal.writeln(
-        "\u001b[31m[terminal] Connection error. Check frontend server logs for terminal startup details.\u001b[0m",
-      );
-    };
+      terminal.writeln(`\u001b[31m${message}\u001b[0m`);
+    });
 
     const inputDisposable = terminal.onData((data) => {
-      if (!isConnectedRef.current) {
+      if (!runtime.isConnected()) {
         return;
       }
 
-      void fetch("/api/terminal/input", {
-        body: JSON.stringify({ sessionId, data }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      }).catch(() => undefined);
+      runtime.sendInput(data);
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -179,8 +149,11 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
     return () => {
       window.removeEventListener("resize", handleWindowResize);
       resizeObserver.disconnect();
-      eventSource.close();
       inputDisposable.dispose();
+      unsubscribeError();
+      unsubscribeConnection();
+      outputAttachment.detach();
+      runtime.release();
       terminal.dispose();
       fitAddonRef.current = null;
       terminalRef.current = null;

@@ -45,6 +45,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     const result = openTerminalSession(sessionId, user.id, { cols, rows });
+    if (result.status === "missing_target") {
+      return NextResponse.json(
+        { error: result.message },
+        { status: 412 },
+      );
+    }
     if (result.status === "forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

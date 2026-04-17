@@ -1,5 +1,6 @@
 # Build outputs
-wildcard-catcher.exe
+router.exe
+router
 /bin/
 
 # Go cache and temp artifacts
