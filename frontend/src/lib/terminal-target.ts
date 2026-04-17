@@ -14,6 +14,7 @@ type TerminalTargetMode = "auto" | "docker" | "host";
 
 const DEFAULT_DOCKER_SERVICE = "backend";
 const DEFAULT_DOCKER_SHELL = "/bin/sh";
+const DEFAULT_UNIX_SHELL = "/bin/sh";
 
 function parseTargetMode(value: string | undefined): TerminalTargetMode {
   const normalizedValue = value?.trim().toLowerCase();
@@ -45,6 +46,29 @@ function getHostWorkingDirectory(): string {
   return process.env.HOME?.trim() || os.homedir() || process.cwd();
 }
 
+function resolveUnixHostShell(): { command: string; args: string[] } {
+  const configuredShell = process.env.SHELL?.trim();
+  if (configuredShell && configuredShell.length > 0) {
+    const shellArgs = configuredShell.includes("bash") ? ["-l"] : [];
+    return {
+      command: configuredShell,
+      args: shellArgs,
+    };
+  }
+
+  if (existsSync("/bin/bash")) {
+    return {
+      command: "/bin/bash",
+      args: ["-l"],
+    };
+  }
+
+  return {
+    command: DEFAULT_UNIX_SHELL,
+    args: [],
+  };
+}
+
 function resolveHostSpawnTarget(): TerminalSpawnTarget {
   if (process.platform === "win32") {
     return {
@@ -59,13 +83,11 @@ function resolveHostSpawnTarget(): TerminalSpawnTarget {
     };
   }
 
-  const shell = process.env.SHELL?.trim();
-  const command = shell && shell.length > 0 ? shell : "/bin/bash";
-  const args = command.includes("bash") ? ["-l"] : [];
+  const shell = resolveUnixHostShell();
 
   return {
-    command,
-    args,
+    command: shell.command,
+    args: shell.args,
     cwd: getHostWorkingDirectory(),
     env: {
       ...process.env,
@@ -146,15 +168,14 @@ function tryResolveDockerContainerId(): string | null {
   }
 }
 
-function resolveDockerSpawnTarget(): TerminalSpawnTarget {
-  const containerId = resolveDockerContainerIdStrict();
+function buildDockerSpawnTarget(containerId: string): TerminalSpawnTarget {
   const dockerShell =
     process.env.TERMINAL_DOCKER_SHELL?.trim() || DEFAULT_DOCKER_SHELL;
   const dockerShellArgs = splitShellArgs(process.env.TERMINAL_DOCKER_SHELL_ARGS);
 
   return {
     command: "docker",
-    args: ["exec", "-it", containerId, dockerShell, ...dockerShellArgs],
+    args: ["exec", "-i", containerId, dockerShell, ...dockerShellArgs],
     cwd: process.cwd(),
     env: {
       ...process.env,
@@ -164,26 +185,18 @@ function resolveDockerSpawnTarget(): TerminalSpawnTarget {
   };
 }
 
+function resolveDockerSpawnTarget(): TerminalSpawnTarget {
+  const containerId = resolveDockerContainerIdStrict();
+  return buildDockerSpawnTarget(containerId);
+}
+
 function tryResolveDockerSpawnTarget(): TerminalSpawnTarget | null {
   const containerId = tryResolveDockerContainerId();
   if (!containerId) {
     return null;
   }
 
-  const dockerShell =
-    process.env.TERMINAL_DOCKER_SHELL?.trim() || DEFAULT_DOCKER_SHELL;
-  const dockerShellArgs = splitShellArgs(process.env.TERMINAL_DOCKER_SHELL_ARGS);
-
-  return {
-    command: "docker",
-    args: ["exec", "-it", containerId, dockerShell, ...dockerShellArgs],
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      COLORTERM: "truecolor",
-      TERM: "xterm-256color",
-    },
-  };
+  return buildDockerSpawnTarget(containerId);
 }
 
 export function resolveTerminalSpawnTarget(): TerminalSpawnTarget {

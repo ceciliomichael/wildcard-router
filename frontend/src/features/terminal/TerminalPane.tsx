@@ -133,6 +133,7 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
 
     eventSource.onopen = () => {
       isConnectedRef.current = true;
+      terminal.writeln("Terminal connected.");
       fitAndResize();
     };
 
@@ -145,6 +146,10 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
 
     eventSource.onerror = () => {
       isConnectedRef.current = false;
+      terminal.writeln("");
+      terminal.writeln(
+        "\u001b[31m[terminal] Connection error. Check frontend server logs for terminal startup details.\u001b[0m",
+      );
     };
 
     const inputDisposable = terminal.onData((data) => {

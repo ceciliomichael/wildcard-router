@@ -107,19 +107,30 @@ function createTerminalSession(
   dimensions: TerminalDimensions,
 ): TerminalSession {
   const target = resolveTerminalSpawnTarget();
+  let spawnedPty: pty.IPty;
+  try {
+    spawnedPty = pty.spawn(target.command, target.args, {
+      cols: dimensions.cols,
+      rows: dimensions.rows,
+      cwd: target.cwd,
+      name: "xterm-256color",
+      env: target.env,
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown terminal spawn error.";
+    throw new Error(
+      `Failed to spawn terminal process "${target.command} ${target.args.join(" ")}": ${errorMessage}`,
+    );
+  }
+
   const session: TerminalSession = {
     id: sessionId,
     ownerUserId,
     listeners: new Set<TerminalOutputListener>(),
     cleanupTimer: null,
     lastActivityAt: Date.now(),
-    pty: pty.spawn(target.command, target.args, {
-      cols: dimensions.cols,
-      rows: dimensions.rows,
-      cwd: target.cwd,
-      name: "xterm-256color",
-      env: target.env,
-    }),
+    pty: spawnedPty,
   };
 
   session.pty.onData((chunk) => {
