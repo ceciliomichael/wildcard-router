@@ -43,12 +43,19 @@ function MetricCard({ label, value, accent, icon }: MetricCardProps) {
       >
         {icon}
       </div>
-      <div style={{ minWidth: 0 }}>
+      <div
+        style={{
+          minWidth: 0,
+          display: "grid",
+          gap: "0.05rem",
+          alignContent: "center",
+        }}
+      >
         <div
           style={{
-            fontSize: "1.375rem",
-            fontWeight: "700",
-            letterSpacing: "-0.03em",
+            fontSize: "1.3rem",
+            fontWeight: "800",
+            letterSpacing: "-0.02em",
             color: "var(--color-ink)",
             lineHeight: 1.1,
           }}
@@ -57,10 +64,11 @@ function MetricCard({ label, value, accent, icon }: MetricCardProps) {
         </div>
         <div
           style={{
-            fontSize: "0.75rem",
-            color: "var(--color-ink-muted)",
-            fontWeight: "500",
-            marginTop: "0.125rem",
+            fontSize: "0.74rem",
+            color: "var(--color-ink-secondary)",
+            fontWeight: "600",
+            letterSpacing: "-0.01em",
+            lineHeight: 1.1,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { CustomDropdown } from "../../../components/CustomDropdown";
+import { SegmentedField } from "../../../components/SegmentedField";
 import type { AuthUser } from "../../auth/types";
 import type { DashboardNavItem } from "../navigation";
 
@@ -43,6 +43,14 @@ export function DashboardTopBar({
     },
   ];
   const initial = getInitial(user);
+  const activeNavigationValue =
+    navigation.find((item) =>
+      item.href === "/"
+        ? currentPath === item.href
+        : currentPath.startsWith(item.href),
+    )?.href ??
+    navigation[0]?.href ??
+    "";
 
   return (
     <header
@@ -140,29 +148,20 @@ export function DashboardTopBar({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.4rem",
           }}
         >
-          {navigation.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? currentPath === item.href
-                : currentPath.startsWith(item.href);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  isActive
-                    ? "dashboard-topbar-link active"
-                    : "dashboard-topbar-link"
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          <SegmentedField
+            ariaLabel="Dashboard navigation"
+            className="dashboard-topbar-nav-segmented"
+            value={activeNavigationValue}
+            options={navigation.map((item) => ({
+              label: item.label,
+              value: item.href,
+            }))}
+            onChange={(value) => {
+              router.push(value);
+            }}
+          />
         </div>
 
         <div
@@ -253,35 +252,6 @@ export function DashboardTopBar({
         </div>
       </div>
       <style>{`
-        .dashboard-topbar-link {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 2.4rem;
-          padding: 0 0.95rem;
-          border-radius: 999px;
-          border: 1px solid transparent;
-          color: var(--color-ink-secondary);
-          font-size: 0.8125rem;
-          font-weight: 600;
-          text-decoration: none;
-          transition:
-            background 0.15s ease,
-            border-color 0.15s ease,
-            color 0.15s ease;
-        }
-
-        .dashboard-topbar-link:hover {
-          background: var(--color-brand-lighter);
-          color: var(--color-ink);
-        }
-
-        .dashboard-topbar-link.active {
-          background: var(--color-brand-light);
-          border-color: var(--color-brand-border);
-          color: var(--color-ink);
-        }
-
         .dashboard-topbar-shell {
           grid-template-columns: minmax(0, 1fr) auto;
         }
@@ -317,8 +287,12 @@ export function DashboardTopBar({
           justify-content: center;
           flex-wrap: nowrap;
           overflow-x: auto;
-          padding-bottom: 0.2rem;
           scrollbar-width: thin;
+        }
+
+        .dashboard-topbar-nav-segmented {
+          flex-wrap: nowrap;
+          min-width: fit-content;
         }
 
         @media (min-width: 768px) {
@@ -353,7 +327,7 @@ export function DashboardTopBar({
         }
 
         @media (max-width: 767px) {
-          .dashboard-topbar-link {
+          .dashboard-topbar-nav-segmented button {
             white-space: nowrap;
           }
         }

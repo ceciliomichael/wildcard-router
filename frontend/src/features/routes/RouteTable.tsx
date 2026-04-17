@@ -5,6 +5,7 @@ import {
   CustomDropdown,
   type DropdownOption,
 } from "../../components/CustomDropdown";
+import { SegmentedField } from "../../components/SegmentedField";
 import type { Route } from "./types";
 
 interface RouteTableProps {
@@ -25,6 +26,15 @@ const sortOptions: DropdownOption<SortKey>[] = [
   { value: "updatedAt", label: "Latest" },
   { value: "subdomain", label: "A-Z" },
 ];
+const filterOptions = [
+  { value: "all", label: "All" },
+  { value: "enabled", label: "Enabled" },
+  { value: "disabled", label: "Disabled" },
+] as const;
+
+function isFilterState(value: string): value is FilterState {
+  return value === "all" || value === "enabled" || value === "disabled";
+}
 
 function formatRelative(iso: string): string {
   try {
@@ -140,41 +150,17 @@ export function RouteTable({
       </div>
 
       {/* Filter pills */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.2rem",
-          background: "var(--color-surface-subtle)",
-          padding: "0.2rem",
-          borderRadius: "0.75rem",
-          border: "1px solid var(--color-border)",
-          flexShrink: 0,
+      <SegmentedField
+        ariaLabel="Route status filter"
+        size="sm"
+        value={filter}
+        options={filterOptions}
+        onChange={(value) => {
+          if (isFilterState(value)) {
+            setFilter(value);
+          }
         }}
-      >
-        {(["all", "enabled", "disabled"] as FilterState[]).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: "600",
-              padding: "0.2rem 0.6rem",
-              borderRadius: "0.5rem",
-              border: "1px solid transparent",
-              background: filter === f ? "var(--color-surface)" : "transparent",
-              color:
-                filter === f ? "var(--color-ink)" : "var(--color-ink-muted)",
-              boxShadow: filter === f ? "var(--shadow-card)" : "none",
-              transition: "all 0.15s",
-              cursor: "pointer",
-              textTransform: "capitalize",
-            }}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      />
 
       <CustomDropdown
         ariaLabel="Sort routes"
