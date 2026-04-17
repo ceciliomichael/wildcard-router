@@ -42,12 +42,17 @@ Example local values:
 BACKEND_API_BASE=http://localhost:3067
 NEXT_PUBLIC_API_BASE=http://localhost:3067
 NEXT_ALLOWED_DEV_ORIGINS=
+TERMINAL_TARGET=auto
+TERMINAL_DOCKER_SERVICE=backend
 ```
 
 Notes:
 
 - When running outside Docker, point the frontend at the backend on `localhost:3067`.
 - When running in Docker Compose, the frontend can use `http://backend:3067` internally.
+- Terminal sessions default to `TERMINAL_TARGET=auto`, which tries the Docker Compose `backend` container first and falls back to the host shell.
+- Set `TERMINAL_TARGET=docker` to force container shell usage, or `TERMINAL_TARGET=host` to force local shell usage.
+- If your compose file is not in the current/parent directory, set `TERMINAL_DOCKER_COMPOSE_DIR` or `TERMINAL_DOCKER_CONTAINER`.
 - For tunnel-based development, set `NEXT_ALLOWED_DEV_ORIGINS` to your tunnel host if needed.
 - The frontend config already includes common tunnel domains used in development.
 - The route editor includes an option for upstream TLS verification, which is useful for self-signed services.

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
-import os from "node:os";
 
 import pty from "node-pty";
+import { resolveTerminalSpawnTarget } from "./terminal-target";
 
 export interface TerminalDimensions {
   cols: number;
@@ -46,32 +46,6 @@ export const TERMINAL_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 const textEncoder = new TextEncoder();
 const terminalSessions = new Map<string, TerminalSession>();
-
-function getTerminalShellCommand(): { command: string; args: string[] } {
-  if (process.platform === "win32") {
-    return {
-      command: process.env.ComSpec ?? "cmd.exe",
-      args: [],
-    };
-  }
-
-  const shell = process.env.SHELL?.trim();
-  const command = shell && shell.length > 0 ? shell : "/bin/bash";
-  const args = command.includes("bash") ? ["-l"] : [];
-
-  return {
-    command,
-    args,
-  };
-}
-
-function getWorkingDirectory(): string {
-  if (process.platform === "win32") {
-    return process.cwd();
-  }
-
-  return process.env.HOME?.trim() || os.homedir() || process.cwd();
-}
 
 function sanitizeDimension(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
@@ -132,23 +106,19 @@ function createTerminalSession(
   ownerUserId: string,
   dimensions: TerminalDimensions,
 ): TerminalSession {
-  const shell = getTerminalShellCommand();
+  const target = resolveTerminalSpawnTarget();
   const session: TerminalSession = {
     id: sessionId,
     ownerUserId,
     listeners: new Set<TerminalOutputListener>(),
     cleanupTimer: null,
     lastActivityAt: Date.now(),
-    pty: pty.spawn(shell.command, shell.args, {
+    pty: pty.spawn(target.command, target.args, {
       cols: dimensions.cols,
       rows: dimensions.rows,
-      cwd: getWorkingDirectory(),
+      cwd: target.cwd,
       name: "xterm-256color",
-      env: {
-        ...process.env,
-        TERM: "xterm-256color",
-        COLORTERM: "truecolor",
-      },
+      env: target.env,
     }),
   };
 
