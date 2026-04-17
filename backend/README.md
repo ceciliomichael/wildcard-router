@@ -102,7 +102,7 @@ Requests to `<subdomain>.<WILDCARD_BASE_DOMAIN>`:
 - redirect to HTTPS when the incoming request is not secure
 - look up an enabled route in MongoDB
 - proxy traffic to the stored destination
-- return `404` when no enabled subdomain exists
+- return a browser-friendly `404` page when no enabled subdomain exists
 
 The proxy forwards `X-Forwarded-Host` and `X-Forwarded-Proto` to upstream apps.
 When a route is marked to skip upstream TLS verification, the backend will still proxy to `https://` origins but will not reject self-signed certs.

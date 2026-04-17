@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -429,6 +430,51 @@ func TestHandlerPrefersReservedFrontendRouteOverStoredRoute(t *testing.T) {
 	}
 	if captured.Path != "/" {
 		t.Fatalf("unexpected frontend upstream path: %s", captured.Path)
+	}
+}
+
+func TestHandlerRendersBeautiful404ForMissingSubdomain(t *testing.T) {
+	t.Parallel()
+
+	handler := NewHandler(
+		config.Config{
+			BaseDomain:             "echosphere.systems",
+			FrontendRouteSubdomain: "dashboard",
+		},
+		stubRouteStore{routes: map[string]registry.Route{}},
+		log.New(io.Discard, "", 0),
+	)
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "http://proxy.internal/login", nil)
+	request.Host = "proxy.internal"
+	request.Header.Set("X-Forwarded-Host", "missing.echosphere.systems")
+	request.Header.Set("X-Forwarded-Proto", "https")
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("unexpected status: %d", recorder.Code)
+	}
+	if contentType := recorder.Header().Get("Content-Type"); !strings.Contains(contentType, "text/html") {
+		t.Fatalf("unexpected content type: %s", contentType)
+	}
+	if cacheControl := recorder.Header().Get("Cache-Control"); cacheControl != "no-store" {
+		t.Fatalf("unexpected cache control: %s", cacheControl)
+	}
+
+	body := recorder.Body.String()
+	if !strings.Contains(body, "This subdomain does not exist.") {
+		t.Fatalf("missing headline in body: %s", body)
+	}
+	if !strings.Contains(body, "We could not find a route for <strong>missing.echosphere.systems</strong>.") {
+		t.Fatalf("missing host copy in body: %s", body)
+	}
+	if !strings.Contains(body, "RouteGate could not find a match for this request.") {
+		t.Fatalf("missing note copy in body: %s", body)
+	}
+	if strings.Contains(body, "Redirecting to RouteGate") {
+		t.Fatalf("unexpected redirect copy in body: %s", body)
 	}
 }
 

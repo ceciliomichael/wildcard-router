@@ -83,7 +83,8 @@ func (h *Handler) TryServe(writer http.ResponseWriter, request *http.Request) (b
 	}
 
 	if !found {
-		return false, nil
+		h.writeMissingRoutePage(writer, request, host, subdomain)
+		return true, nil
 	}
 
 	proxy, err := h.proxyFor(route.Destination, route.InsecureSkipTLSVerify)
