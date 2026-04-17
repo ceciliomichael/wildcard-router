@@ -34,6 +34,9 @@ RUN addgroup -S nextjs && adduser -S nextjs -G nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# Next standalone tracing can miss node-pty native artifacts. Copy them explicitly.
+COPY --from=builder /app/node_modules/node-pty ./node_modules/node-pty
+COPY --from=builder /app/node_modules/node-addon-api ./node_modules/node-addon-api
 
 USER nextjs
 
