@@ -798,7 +798,7 @@ func (s *Store) dropLegacyUserIndex(ctx context.Context, indexName string) error
 			return fmt.Errorf("decode user index: %w", err)
 		}
 		if indexDoc.Name == indexName {
-			if err := s.users.Indexes().DropOne(ctx, indexName); err != nil {
+			if _, err := s.users.Indexes().DropOne(ctx, indexName); err != nil {
 				return fmt.Errorf("drop legacy user index %s: %w", indexName, err)
 			}
 			break
