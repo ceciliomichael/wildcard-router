@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -205,9 +204,7 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	if insecureSkipTLSVerify {
-		proxy.Transport = insecureSkipVerifyTransport()
-	}
+	proxy.Transport = newUpstreamTransport(insecureSkipTLSVerify)
 
 	originalDirector := proxy.Director
 	proxy.Director = func(request *http.Request) {
@@ -240,12 +237,6 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 
 func proxyCacheKey(destination string, insecureSkipTLSVerify bool) string {
 	return fmt.Sprintf("%s|insecureTLS=%t", strings.TrimSpace(destination), insecureSkipTLSVerify)
-}
-
-func insecureSkipVerifyTransport() *http.Transport {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	return transport
 }
 
 func normalizeHost(rawHost string) string {
