@@ -63,8 +63,6 @@ export function NotFoundScreen() {
   const [secondsLeft, setSecondsLeft] = useState(3);
   const targetPathRef = useRef("/login");
 
-  const destinationLabel = auth.isAuthenticated ? "routes" : "login";
-
   useEffect(() => {
     targetPathRef.current = auth.isAuthenticated ? "/" : "/login";
   }, [auth.isAuthenticated]);
@@ -95,8 +93,7 @@ export function NotFoundScreen() {
         </h1>
         <p style={bodyStyle}>We could not find a page for this request.</p>
         <p style={noteStyle}>
-          Redirecting to {destinationLabel} in {secondsLeft}{" "}
-          {secondsLeft === 1 ? "second" : "seconds"}.
+          Redirecting in {secondsLeft} {secondsLeft === 1 ? "second" : "seconds"}.
         </p>
       </section>
     </main>
