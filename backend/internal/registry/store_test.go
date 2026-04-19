@@ -2,16 +2,12 @@ package registry
 
 import "testing"
 
-func TestNormalizeDestinationAddsHTTPForBareHostPort(t *testing.T) {
+func TestNormalizeDestinationRejectsBareHostPort(t *testing.T) {
 	t.Parallel()
 
-	normalized, err := NormalizeDestination("localhost:3068")
-	if err != nil {
-		t.Fatalf("normalize destination: %v", err)
-	}
-
-	if normalized != "http://localhost:3068" {
-		t.Fatalf("unexpected normalized destination: %s", normalized)
+	_, err := NormalizeDestination("localhost:3068")
+	if err == nil {
+		t.Fatalf("expected bare host:port destination to be rejected")
 	}
 }
 

@@ -29,10 +29,14 @@ type SubdomainAvailabilityStatus =
   | "error";
 
 function isValidUrl(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
   try {
-    const normalized = value.includes("://") ? value : `http://${value}`;
-    const url = new URL(normalized);
-    return url.protocol === "http:" || url.protocol === "https:";
+    const url = new URL(trimmed);
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      url.hostname.length > 0
+    );
   } catch {
     return false;
   }
@@ -143,9 +147,9 @@ export function RouteForm({
     ? !isSubdomainFormatValid || isSubdomainReserved
       ? null
       : isSubdomainUnavailable
-        ? "Not available"
+        ? "• Not available"
         : subdomainAvailabilityStatus === "available"
-          ? "Available"
+          ? "• Available"
           : subdomainAvailabilityStatus === "checking"
             ? "Checking availability..."
             : subdomainAvailabilityStatus === "error"
@@ -161,7 +165,7 @@ export function RouteForm({
     ? !destination.trim()
       ? "Destination is required."
       : !isValidUrl(destination.trim())
-        ? "Must be a valid http:// or https:// URL, or a host:port like localhost:3068."
+        ? "Must be a valid URL starting with http:// or https://."
         : blockedDestinationHost
           ? `The destination host "${blockedDestinationHost}" is reserved for admin users.`
           : null
@@ -327,10 +331,10 @@ export function RouteForm({
                 className="field-hint"
                 style={{
                   color: (() => {
-                    if (subdomainAvailability === "Available") {
+                    if (subdomainAvailability === "• Available") {
                       return "var(--color-success)";
                     }
-                    if (subdomainAvailability === "Not available") {
+                    if (subdomainAvailability === "• Not available") {
                       return "var(--color-error)";
                     }
                     return "var(--color-ink-muted)";
@@ -352,7 +356,7 @@ export function RouteForm({
               id="route-destination"
               type="url"
               className={`field-input mono ${destError ? "error" : ""}`}
-              placeholder="https://localhost:3000 or localhost:3000"
+              placeholder="https://localhost:3000"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               onBlur={() => setTouchedDest(true)}

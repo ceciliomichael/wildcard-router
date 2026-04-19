@@ -364,12 +364,7 @@ func NormalizeDestination(raw string) (string, error) {
 		return "", fmt.Errorf("destination is required")
 	}
 
-	parsedInput := trimmed
-	if !strings.Contains(parsedInput, "://") {
-		parsedInput = "http://" + parsedInput
-	}
-
-	parsed, err := url.Parse(parsedInput)
+	parsed, err := url.Parse(trimmed)
 	if err != nil {
 		return "", err
 	}
