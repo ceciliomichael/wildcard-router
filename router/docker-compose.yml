@@ -10,11 +10,11 @@ services:
     env_file:
       - .env
     environment:
-      ROUTER_PORT: 3068
+      ROUTER_PORT: ${ROUTER_PORT:-3069}
       WILDCARD_BASE_DOMAIN: ${WILDCARD_BASE_DOMAIN:-example.com}
       MONGODB_URI: ${MONGODB_URI}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-routegate}
       FRONTEND_ROUTE_SUBDOMAIN: ${FRONTEND_ROUTE_SUBDOMAIN:-routegate}
       FRONTEND_ROUTE_DESTINATION: ${FRONTEND_ROUTE_DESTINATION:-http://frontend:3000}
     ports:
-      - "3068:3068"
+      - "${ROUTER_PORT:-3068}:${ROUTER_PORT:-3068}"
