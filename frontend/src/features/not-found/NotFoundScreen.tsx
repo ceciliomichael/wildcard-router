@@ -1,4 +1,9 @@
+"use client";
+
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../auth/useAuth";
 
 const rootStyle: CSSProperties = {
   minHeight: "100dvh",
@@ -53,6 +58,34 @@ const noteStyle: CSSProperties = {
 };
 
 export function NotFoundScreen() {
+  const auth = useAuth();
+  const router = useRouter();
+  const [secondsLeft, setSecondsLeft] = useState(3);
+
+  const destinationLabel = auth.isAuthenticated ? "routes" : "login";
+  const targetPath = auth.isAuthenticated ? "/" : "/login";
+
+  useEffect(() => {
+    if (auth.isLoading) {
+      return;
+    }
+
+    setSecondsLeft(3);
+
+    const countdown = window.setInterval(() => {
+      setSecondsLeft((current) => (current <= 1 ? 0 : current - 1));
+    }, 1000);
+
+    const redirect = window.setTimeout(() => {
+      router.replace(targetPath);
+    }, 3000);
+
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(redirect);
+    };
+  }, [auth.isLoading, router, targetPath]);
+
   return (
     <main style={rootStyle}>
       <section style={shellStyle} aria-labelledby="not-found-title">
@@ -61,7 +94,16 @@ export function NotFoundScreen() {
           This page does not exist.
         </h1>
         <p style={bodyStyle}>We could not find a page for this request.</p>
-        <p style={noteStyle}>Redirecting to routes in 3 seconds.</p>
+        <p style={noteStyle}>
+          {auth.isLoading ? (
+            "Waiting before redirecting."
+          ) : (
+            <>
+              Redirecting to {destinationLabel} in {secondsLeft}{" "}
+              {secondsLeft === 1 ? "second" : "seconds"}.
+            </>
+          )}
+        </p>
       </section>
     </main>
   );
