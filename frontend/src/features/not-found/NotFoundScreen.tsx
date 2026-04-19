@@ -94,16 +94,12 @@ export function NotFoundScreen() {
           This page does not exist.
         </h1>
         <p style={bodyStyle}>We could not find a page for this request.</p>
-        <p style={noteStyle}>
-          {auth.isLoading ? (
-            "Waiting before redirecting."
-          ) : (
-            <>
-              Redirecting to {destinationLabel} in {secondsLeft}{" "}
-              {secondsLeft === 1 ? "second" : "seconds"}.
-            </>
-          )}
-        </p>
+        {!auth.isLoading ? (
+          <p style={noteStyle}>
+            Redirecting to {destinationLabel} in {secondsLeft}{" "}
+            {secondsLeft === 1 ? "second" : "seconds"}.
+          </p>
+        ) : null}
       </section>
     </main>
   );
