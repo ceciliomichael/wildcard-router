@@ -42,17 +42,19 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
     }
 
     main {
+      min-height: 100svh;
       min-height: 100dvh;
       display: grid;
       place-items: center;
-      padding: 24px;
+      padding: 16px;
       text-align: center;
     }
 
     .shell {
-      width: min(100%, 42rem);
+      width: min(100%, 36rem);
       display: grid;
-      gap: 0.9rem;
+      justify-items: center;
+      gap: 0.8rem;
     }
 
     .eyebrow {
@@ -69,6 +71,7 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
       font-size: clamp(2.4rem, 8vw, 4.8rem);
       line-height: 0.98;
       letter-spacing: -0.06em;
+      text-wrap: balance;
     }
 
     .nowrap {
@@ -84,6 +87,16 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
     .note {
       font-size: 0.875rem;
       color: var(--ink-muted);
+    }
+
+    @media (min-width: 640px) {
+      main {
+        padding: 24px;
+      }
+
+      .shell {
+        gap: 0.9rem;
+      }
     }
   </style>
 </head>

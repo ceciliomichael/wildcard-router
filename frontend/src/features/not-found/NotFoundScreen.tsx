@@ -36,22 +36,26 @@ export function NotFoundScreen() {
   return (
     <main
       style={{
+        minHeight: "100svh",
         minHeight: "100dvh",
         display: "grid",
         placeItems: "center",
-        padding: "24px",
+        padding: "16px",
         background:
           "radial-gradient(circle at top, rgba(16, 16, 17, 0.08), transparent 32%), linear-gradient(180deg, var(--color-surface-muted) 0%, #fbfbfd 58%, #f6f7fa 100%)",
         color: "var(--color-ink)",
         lineHeight: 1.5,
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
       <section
         style={{
           width: "100%",
-          maxWidth: "42rem",
+          maxWidth: "36rem",
           display: "grid",
-          gap: "0.9rem",
+          justifyItems: "center",
+          gap: "0.8rem",
           textAlign: "center",
         }}
       >
@@ -74,6 +78,7 @@ export function NotFoundScreen() {
             lineHeight: 0.98,
             letterSpacing: "-0.06em",
             color: "var(--color-ink)",
+            textWrap: "balance",
           }}
         >
           This page does not exist.
