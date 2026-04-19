@@ -82,6 +82,7 @@ User creation generates a password server-side and returns it once in the respon
 Authenticated:
 
 - `GET /api/routes`
+- `GET /api/routes/availability?subdomain={value}`
 - `POST /api/routes`
 - `PUT /api/routes/{id}`
 - `DELETE /api/routes/{id}`

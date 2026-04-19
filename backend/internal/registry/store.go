@@ -158,6 +158,30 @@ func (s *Store) List(ctx context.Context, scope AccessScope) ([]Route, error) {
 	return routes, nil
 }
 
+func (s *Store) IsSubdomainAvailable(ctx context.Context, subdomain string) (bool, error) {
+	normalized := normalizeSubdomain(subdomain)
+	if normalized == "" {
+		return false, fmt.Errorf("subdomain is required")
+	}
+	if !subdomainPattern.MatchString(normalized) {
+		return false, fmt.Errorf("subdomain format is invalid")
+	}
+	if s.isReservedSubdomain(normalized) {
+		return false, nil
+	}
+
+	err := s.collection.FindOne(ctx, bson.M{
+		"normalizedSubdomain": normalized,
+	}).Err()
+	if err == nil {
+		return false, nil
+	}
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return true, nil
+	}
+	return false, fmt.Errorf("check subdomain availability: %w", err)
+}
+
 func (s *Store) Create(ctx context.Context, owner OwnerInfo, input CreateRouteInput) (Route, error) {
 	ownerID, err := primitive.ObjectIDFromHex(strings.TrimSpace(owner.UserID))
 	if err != nil {

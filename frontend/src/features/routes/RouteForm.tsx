@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { Switch } from "../../components/Switch";
+import { checkSubdomainAvailability } from "./api";
 import { getBlockedDestinationHost } from "./destinationPolicy";
 import { isReservedRouteSubdomain, RESERVED_ROUTE_SUBDOMAIN } from "./reserved";
 import type { Route, RoutePayload } from "./types";
@@ -19,6 +20,13 @@ interface RouteFormProps {
   onClose: () => void;
   isLoading: boolean;
 }
+
+type SubdomainAvailabilityStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "unavailable"
+  | "error";
 
 function isValidUrl(value: string): boolean {
   try {
@@ -52,6 +60,8 @@ export function RouteForm({
   );
   const [note, setNote] = useState(initial?.note ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [subdomainAvailabilityStatus, setSubdomainAvailabilityStatus] =
+    useState<SubdomainAvailabilityStatus>("idle");
 
   // Track touched state for inline validation
   const [touchedSub, setTouchedSub] = useState(false);
@@ -65,17 +75,82 @@ export function RouteForm({
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  const normalizedSubdomain = subdomain.trim().toLowerCase();
+  const hasSubdomainInput = normalizedSubdomain.length > 0;
+  const isSubdomainFormatValid = isDnsSafe(normalizedSubdomain);
+  const isSubdomainReserved = isReservedRouteSubdomain(normalizedSubdomain);
+  const subdomainExistsLocally =
+    !isEditing && existingSubdomains.includes(normalizedSubdomain);
+  const isSubdomainUnavailable =
+    subdomainExistsLocally || subdomainAvailabilityStatus === "unavailable";
+
+  useEffect(() => {
+    if (
+      isEditing ||
+      !hasSubdomainInput ||
+      !isSubdomainFormatValid ||
+      isSubdomainReserved
+    ) {
+      setSubdomainAvailabilityStatus("idle");
+      return;
+    }
+
+    let isCanceled = false;
+    setSubdomainAvailabilityStatus("checking");
+
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const isAvailable = await checkSubdomainAvailability(
+            normalizedSubdomain,
+          );
+          if (isCanceled) return;
+          setSubdomainAvailabilityStatus(
+            isAvailable ? "available" : "unavailable",
+          );
+        } catch {
+          if (isCanceled) return;
+          setSubdomainAvailabilityStatus("error");
+        }
+      })();
+    }, 250);
+
+    return () => {
+      isCanceled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    hasSubdomainInput,
+    isEditing,
+    isSubdomainFormatValid,
+    isSubdomainReserved,
+    normalizedSubdomain,
+  ]);
+
   const subError = touchedSub
-    ? !subdomain.trim()
+    ? !hasSubdomainInput
       ? "Subdomain is required."
-      : !isDnsSafe(subdomain.trim())
+        : !isSubdomainFormatValid
         ? "Must be a valid DNS label (letters, numbers, hyphens)."
-        : isReservedRouteSubdomain(subdomain)
+        : isSubdomainReserved
           ? `The subdomain "${RESERVED_ROUTE_SUBDOMAIN}" is reserved for the frontend.`
-          : !isEditing &&
-              existingSubdomains.includes(subdomain.trim().toLowerCase())
+          : isSubdomainUnavailable
             ? "Subdomain already exists."
             : null
+    : null;
+
+  const subdomainAvailability = hasSubdomainInput
+    ? !isSubdomainFormatValid || isSubdomainReserved
+      ? null
+      : isSubdomainUnavailable
+        ? "Not available"
+        : subdomainAvailabilityStatus === "available"
+          ? "Available"
+          : subdomainAvailabilityStatus === "checking"
+            ? "Checking availability..."
+            : subdomainAvailabilityStatus === "error"
+              ? "Unable to check availability right now."
+              : null
     : null;
 
   const blockedDestinationHost = isAdmin
@@ -93,11 +168,10 @@ export function RouteForm({
     : null;
 
   const isValid =
-    subdomain.trim() !== "" &&
-    isDnsSafe(subdomain.trim()) &&
-    !isReservedRouteSubdomain(subdomain) &&
-    (isEditing ||
-      !existingSubdomains.includes(subdomain.trim().toLowerCase())) &&
+    hasSubdomainInput &&
+    isSubdomainFormatValid &&
+    !isSubdomainReserved &&
+    (isEditing || subdomainAvailabilityStatus === "available") &&
     isValidUrl(destination.trim()) &&
     (isAdmin || !blockedDestinationHost);
 
@@ -248,6 +322,24 @@ export function RouteForm({
               spellCheck={false}
             />
             {subError && <p className="field-error">{subError}</p>}
+            {!subError && subdomainAvailability ? (
+              <p
+                className="field-hint"
+                style={{
+                  color: (() => {
+                    if (subdomainAvailability === "Available") {
+                      return "var(--color-success)";
+                    }
+                    if (subdomainAvailability === "Not available") {
+                      return "var(--color-error)";
+                    }
+                    return "var(--color-ink-muted)";
+                  })(),
+                }}
+              >
+                {subdomainAvailability}
+              </p>
+            ) : null}
           </div>
 
           {/* Destination */}

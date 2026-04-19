@@ -42,6 +42,7 @@ func NewHandler(
 	mux.HandleFunc("/api/users", handler.handleUsers)
 	mux.HandleFunc("/api/users/", handler.handleUsersItem)
 	mux.HandleFunc("/api/routes", handler.handleRoutesCollection)
+	mux.HandleFunc("/api/routes/availability", handler.handleRouteSubdomainAvailability)
 	mux.HandleFunc("/api/routes/", handler.handleRoutesItem)
 	return mux
 }
@@ -492,6 +493,40 @@ func (h *Handler) handleRoutesItem(writer http.ResponseWriter, request *http.Req
 	default:
 		h.writeMethodNotAllowed(writer, http.MethodPut, http.MethodDelete)
 	}
+}
+
+func (h *Handler) handleRouteSubdomainAvailability(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	_, ok := h.requireUser(writer, request)
+	if !ok {
+		return
+	}
+	if request.Method != http.MethodGet {
+		h.writeMethodNotAllowed(writer, http.MethodGet)
+		return
+	}
+
+	subdomain := strings.TrimSpace(request.URL.Query().Get("subdomain"))
+
+	ctx, cancel := context.WithTimeout(request.Context(), 5*time.Second)
+	defer cancel()
+
+	available, err := h.routes.IsSubdomainAvailable(ctx, subdomain)
+	if err != nil {
+		h.writeError(writer, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	h.writeJSON(writer, http.StatusOK, map[string]any{
+		"subdomain": normalizeSubdomainForResponse(subdomain),
+		"available": available,
+	})
+}
+
+func normalizeSubdomainForResponse(raw string) string {
+	return strings.ToLower(strings.TrimSpace(raw))
 }
 
 func (h *Handler) requireUser(writer http.ResponseWriter, request *http.Request) (identity.User, bool) {

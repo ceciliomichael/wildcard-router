@@ -79,3 +79,17 @@ export async function deleteRoute(id: string): Promise<void> {
   });
   if (!res.ok) throw await parseError(res);
 }
+
+export async function checkSubdomainAvailability(
+  subdomain: string,
+): Promise<boolean> {
+  const params = new URLSearchParams({ subdomain });
+  const res = await fetch(`${ROUTES_API_PATH}/availability?${params.toString()}`, {
+    headers: buildHeaders(),
+    cache: "no-store",
+    credentials: "include",
+  });
+  if (!res.ok) throw await parseError(res);
+  const data = (await res.json()) as { available?: unknown } | null;
+  return data?.available === true;
+}
