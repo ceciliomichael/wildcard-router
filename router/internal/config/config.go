@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -21,6 +22,11 @@ func (c Config) ListenAddress() string {
 }
 
 func Load() (Config, error) {
+	port, err := parsePort(firstNonEmpty(os.Getenv("ROUTER_PORT"), os.Getenv("PORT")))
+	if err != nil {
+		return Config{}, err
+	}
+
 	baseDomain := normalizeHost(os.Getenv("WILDCARD_BASE_DOMAIN"))
 	if baseDomain == "" {
 		return Config{}, fmt.Errorf("WILDCARD_BASE_DOMAIN is required")
@@ -44,13 +50,26 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		Port:                     3068,
+		Port:                     port,
 		BaseDomain:               baseDomain,
 		MongoURI:                 mongoURI,
 		MongoDatabase:            strings.TrimSpace(firstNonEmpty(os.Getenv("MONGODB_DATABASE"), "routegate")),
 		FrontendRouteSubdomain:   frontendRouteSubdomain,
 		FrontendRouteDestination: frontendRouteDestination,
 	}, nil
+}
+
+func parsePort(raw string) (int, error) {
+	if strings.TrimSpace(raw) == "" {
+		return 3068, nil
+	}
+
+	port, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || port < 1 || port > 65535 {
+		return 0, fmt.Errorf("invalid port: %q", raw)
+	}
+
+	return port, nil
 }
 
 func normalizeHost(host string) string {
