@@ -42,14 +42,14 @@ services:
     env_file:
       - .env
     environment:
-      ROUTER_PORT: ${ROUTER_PORT:-3069}
+      ROUTER_PORT: ${ROUTER_PORT}
       WILDCARD_BASE_DOMAIN: ${WILDCARD_BASE_DOMAIN:-example.com}
       MONGODB_URI: ${MONGODB_URI:-mongodb://${MONGO_INITDB_ROOT_USERNAME:-wc_root}:${MONGO_INITDB_ROOT_PASSWORD:-replace-with-a-strong-password}@mongo:27019/?authSource=admin}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-routegate}
       FRONTEND_ROUTE_SUBDOMAIN: ${FRONTEND_ROUTE_SUBDOMAIN:-routegate}
       FRONTEND_ROUTE_DESTINATION: ${FRONTEND_ROUTE_DESTINATION:-http://frontend:3000}
     ports:
-      - "${ROUTER_PORT:-3069}:${ROUTER_PORT:-3069}"
+      - "${ROUTER_PORT}:${ROUTER_PORT}"
 
 volumes:
   mongo-data:
