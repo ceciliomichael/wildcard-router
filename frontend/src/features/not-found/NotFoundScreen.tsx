@@ -36,7 +36,6 @@ export function NotFoundScreen() {
   return (
     <main
       style={{
-        minHeight: "100svh",
         minHeight: "100dvh",
         display: "grid",
         placeItems: "center",
