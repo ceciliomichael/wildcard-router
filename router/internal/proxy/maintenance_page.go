@@ -78,6 +78,11 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
       white-space: nowrap;
     }
 
+    .host {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
     p {
       margin: 0;
       font-size: 1rem;
@@ -106,7 +111,7 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
       <p class="eyebrow">RouteGate</p>
       <h1 id="maintenance-title">This destination is <span class="nowrap">temporarily unavailable.</span></h1>
       <p>
-        We could not connect to the destination for <strong>{{.RequestedHost}}</strong>.
+        We could not connect to the destination for <strong class="host">{{.RequestedHost}}</strong>.
       </p>
       <p class="note">
         RouteGate will serve this subdomain again after the upstream is back online.

@@ -36,6 +36,7 @@ export function NotFoundScreen() {
   return (
     <main
       style={{
+        minHeight: "100svh",
         minHeight: "100dvh",
         display: "grid",
         placeItems: "center",
@@ -46,12 +47,12 @@ export function NotFoundScreen() {
         lineHeight: 1.5,
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        textAlign: "center",
       }}
     >
       <section
         style={{
-          width: "100%",
-          maxWidth: "36rem",
+          width: "min(100%, 36rem)",
           display: "grid",
           justifyItems: "center",
           gap: "0.8rem",
