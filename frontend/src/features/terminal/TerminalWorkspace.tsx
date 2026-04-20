@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type MouseEvent } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import {
   fetchSshTerminalTarget,
   type SshTerminalTarget,
@@ -236,7 +236,7 @@ export function TerminalWorkspace({
     });
   };
 
-  const handleTabMouseDown = (event: MouseEvent<HTMLDivElement>): void => {
+  const handleTabMouseDown = (event: MouseEvent<HTMLButtonElement>): void => {
     if (event.button === 1) {
       event.preventDefault();
     }
@@ -244,7 +244,7 @@ export function TerminalWorkspace({
 
   const handleTabAuxClick = (
     tabId: string,
-    event: MouseEvent<HTMLDivElement>,
+    event: MouseEvent<HTMLButtonElement>,
   ): void => {
     if (event.button !== 1) {
       return;
@@ -380,15 +380,15 @@ export function TerminalWorkspace({
                 <div
                   key={tab.id}
                   className={`terminal-workspace-tab${isActive ? " is-active" : ""}`}
-                  onAuxClick={(event) => {
-                    handleTabAuxClick(tab.id, event);
-                  }}
-                  onMouseDown={handleTabMouseDown}
                 >
                   <button
                     type="button"
                     aria-current={isActive ? "page" : undefined}
                     className="terminal-workspace-tab-button"
+                    onAuxClick={(event) => {
+                      handleTabAuxClick(tab.id, event);
+                    }}
+                    onMouseDown={handleTabMouseDown}
                     onClick={() => {
                       setState((currentState) => ({
                         ...currentState,
