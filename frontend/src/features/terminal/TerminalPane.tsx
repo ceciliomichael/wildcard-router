@@ -11,11 +11,6 @@ interface TerminalSize {
   rows: number;
 }
 
-interface ParsedInputState {
-  hasExitCommand: boolean;
-  remainder: string;
-}
-
 interface TerminalPaneProps {
   onExit: (sessionId: string) => void;
   sessionId: string;
@@ -49,37 +44,6 @@ function areSizesEqual(left: TerminalSize, right: TerminalSize): boolean {
   return left.cols === right.cols && left.rows === right.rows;
 }
 
-function isStandaloneExitCommand(line: string): boolean {
-  const normalized = line.trim();
-  return normalized === "exit" || normalized === "logout";
-}
-
-function parseTerminalInputForExit(
-  buffer: string,
-  data: string,
-): ParsedInputState {
-  const normalizedInput = `${buffer}${data}`
-    .replaceAll("\r\n", "\n")
-    .replaceAll("\r", "\n");
-
-  const segments = normalizedInput.split("\n");
-  const remainder = segments.pop() ?? "";
-
-  for (const segment of segments) {
-    if (isStandaloneExitCommand(segment)) {
-      return {
-        hasExitCommand: true,
-        remainder: "",
-      };
-    }
-  }
-
-  return {
-    hasExitCommand: false,
-    remainder,
-  };
-}
-
 export function TerminalPane({
   onExit,
   sessionId,
@@ -88,10 +52,8 @@ export function TerminalPane({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const inputBufferRef = useRef("");
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
-  const hasRequestedExitRef = useRef(false);
   const onExitRef = useRef(onExit);
 
   onExitRef.current = onExit;
@@ -174,25 +136,12 @@ export function TerminalPane({
       terminal.writeln(`\u001b[31m${message}\u001b[0m`);
     });
 
+    const unsubscribeExit = runtime.subscribeExit(() => {
+      onExitRef.current(sessionId);
+    });
+
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
-
-      if (hasRequestedExitRef.current) {
-        return;
-      }
-
-      const parsedInput = parseTerminalInputForExit(
-        inputBufferRef.current,
-        data,
-      );
-      inputBufferRef.current = parsedInput.remainder;
-
-      if (!parsedInput.hasExitCommand) {
-        return;
-      }
-
-      hasRequestedExitRef.current = true;
-      onExitRef.current(sessionId);
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -209,6 +158,7 @@ export function TerminalPane({
       window.removeEventListener("resize", handleWindowResize);
       resizeObserver.disconnect();
       inputDisposable.dispose();
+      unsubscribeExit();
       unsubscribeError();
       unsubscribeConnection();
       outputAttachment.detach();
@@ -216,7 +166,6 @@ export function TerminalPane({
       terminal.dispose();
       fitAddonRef.current = null;
       terminalRef.current = null;
-      inputBufferRef.current = "";
     };
   }, [sessionId]);
 
