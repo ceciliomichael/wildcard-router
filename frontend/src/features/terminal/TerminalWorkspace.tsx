@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import {
   fetchSshTerminalTarget,
   type SshTerminalTarget,
@@ -236,6 +236,24 @@ export function TerminalWorkspace({
     });
   };
 
+  const handleTabMouseDown = (event: MouseEvent<HTMLDivElement>): void => {
+    if (event.button === 1) {
+      event.preventDefault();
+    }
+  };
+
+  const handleTabAuxClick = (
+    tabId: string,
+    event: MouseEvent<HTMLDivElement>,
+  ): void => {
+    if (event.button !== 1) {
+      return;
+    }
+
+    event.preventDefault();
+    handleCloseTab(tabId);
+  };
+
   const handleConnectSsh = async (input: {
     username: string;
     host: string;
@@ -362,6 +380,10 @@ export function TerminalWorkspace({
                 <div
                   key={tab.id}
                   className={`terminal-workspace-tab${isActive ? " is-active" : ""}`}
+                  onAuxClick={(event) => {
+                    handleTabAuxClick(tab.id, event);
+                  }}
+                  onMouseDown={handleTabMouseDown}
                 >
                   <button
                     type="button"
