@@ -12,6 +12,7 @@ interface TerminalSize {
 }
 
 interface TerminalPaneProps {
+  onExit: (sessionId: string) => void;
   sessionId: string;
   isActive: boolean;
 }
@@ -43,12 +44,20 @@ function areSizesEqual(left: TerminalSize, right: TerminalSize): boolean {
   return left.cols === right.cols && left.rows === right.rows;
 }
 
-export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
+export function TerminalPane({
+  onExit,
+  sessionId,
+  isActive,
+}: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
+  const hasRequestedExitRef = useRef(false);
+  const onExitRef = useRef(onExit);
+
+  onExitRef.current = onExit;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -128,6 +137,15 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
       terminal.writeln(`\u001b[31m${message}\u001b[0m`);
     });
 
+    const unsubscribeExit = runtime.subscribeExit(() => {
+      if (hasRequestedExitRef.current) {
+        return;
+      }
+
+      hasRequestedExitRef.current = true;
+      onExitRef.current(sessionId);
+    });
+
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
@@ -146,6 +164,7 @@ export function TerminalPane({ sessionId, isActive }: TerminalPaneProps) {
       window.removeEventListener("resize", handleWindowResize);
       resizeObserver.disconnect();
       inputDisposable.dispose();
+      unsubscribeExit();
       unsubscribeError();
       unsubscribeConnection();
       outputAttachment.detach();

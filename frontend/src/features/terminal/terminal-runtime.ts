@@ -8,6 +8,7 @@ interface TerminalSize {
 type OutputListener = (chunk: string) => void;
 type ErrorListener = (message: string) => void;
 type ConnectionListener = (isConnected: boolean) => void;
+type ExitListener = () => void;
 
 interface TerminalRuntime {
   buffer: string;
@@ -15,8 +16,10 @@ interface TerminalRuntime {
   connectionErrorTimer: ReturnType<typeof setTimeout> | null;
   errorListeners: Set<ErrorListener>;
   eventSource: EventSource | null;
+  exitListeners: Set<ExitListener>;
   isFlushingInput: boolean;
   isConnected: boolean;
+  hasExited: boolean;
   pendingInput: string[];
   outputListeners: Set<OutputListener>;
   refCount: number;
@@ -35,6 +38,7 @@ export interface TerminalRuntimeHandle {
   sendInput: (data: string) => void;
   subscribeConnection: (listener: ConnectionListener) => () => void;
   subscribeError: (listener: ErrorListener) => () => void;
+  subscribeExit: (listener: ExitListener) => () => void;
 }
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
@@ -130,6 +134,12 @@ function emitConnection(runtime: TerminalRuntime, isConnected: boolean): void {
 function emitError(runtime: TerminalRuntime, message: string): void {
   for (const listener of runtime.errorListeners) {
     listener(message);
+  }
+}
+
+function emitExit(runtime: TerminalRuntime): void {
+  for (const listener of runtime.exitListeners) {
+    listener();
   }
 }
 
@@ -246,7 +256,21 @@ function openRuntimeStream(runtime: TerminalRuntime, size: TerminalSize): void {
     }
   };
 
+  eventSource.addEventListener("terminal-exit", () => {
+    if (runtime.hasExited) {
+      return;
+    }
+
+    runtime.hasExited = true;
+    closeRuntime(runtime);
+    emitExit(runtime);
+  });
+
   eventSource.onerror = () => {
+    if (runtime.hasExited) {
+      return;
+    }
+
     emitConnection(runtime, false);
     scheduleConnectionError(runtime);
   };
@@ -263,6 +287,8 @@ function createRuntime(
     refCount: 0,
     eventSource: null,
     connectionErrorTimer: null,
+    exitListeners: new Set<ExitListener>(),
+    hasExited: false,
     isFlushingInput: false,
     pendingInput: [],
     outputListeners: new Set<OutputListener>(),
@@ -333,6 +359,12 @@ export function acquireTerminalRuntime(
         runtime.errorListeners.delete(listener);
       };
     },
+    subscribeExit(listener) {
+      runtime.exitListeners.add(listener);
+      return () => {
+        runtime.exitListeners.delete(listener);
+      };
+    },
   };
 }
 
@@ -346,6 +378,7 @@ export function disposeTerminalRuntime(sessionId: string): void {
   runtime.outputListeners.clear();
   runtime.errorListeners.clear();
   runtime.connectionListeners.clear();
+  runtime.exitListeners.clear();
   runtime.pendingInput.length = 0;
   runtime.buffer = "";
   clearStoredBuffer(sessionId);

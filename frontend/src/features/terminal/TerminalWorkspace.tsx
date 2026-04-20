@@ -415,6 +415,7 @@ export function TerminalWorkspace({
           : tabs.map((tab) => (
               <TerminalPane
                 key={tab.id}
+                onExit={handleCloseTab}
                 sessionId={tab.id}
                 isActive={tab.id === activeTab?.id}
               />

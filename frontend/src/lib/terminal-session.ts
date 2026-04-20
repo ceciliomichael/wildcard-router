@@ -37,6 +37,7 @@ interface TerminalProcess {
 interface TerminalSession {
   id: string;
   ownerUserId: string;
+  exitListeners: Set<TerminalExitListener>;
   process: TerminalProcess;
   listeners: Set<TerminalOutputListener>;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
@@ -60,6 +61,10 @@ export const TERMINAL_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const textEncoder = new TextEncoder();
 const terminalSessions = new Map<string, TerminalSession>();
 
+function createSseEvent(event: string, data: string): Uint8Array {
+  return textEncoder.encode(`event: ${event}\ndata: ${data}\n\n`);
+}
+
 class SshTerminalProcess implements TerminalProcess {
   private readonly client = new Client();
   private readonly dataListeners = new Set<TerminalOutputListener>();
@@ -81,7 +86,9 @@ class SshTerminalProcess implements TerminalProcess {
         },
         (error, channel) => {
           if (error) {
-            this.emitData(`\r\n[ssh] Failed to open shell: ${error.message}\r\n`);
+            this.emitData(
+              `\r\n[ssh] Failed to open shell: ${error.message}\r\n`,
+            );
             this.kill();
             return;
           }
@@ -219,6 +226,12 @@ function createSseComment(comment: string): Uint8Array {
   return textEncoder.encode(`: ${comment}\n\n`);
 }
 
+function notifyTerminalSessionExit(session: TerminalSession): void {
+  for (const listener of session.exitListeners) {
+    listener();
+  }
+}
+
 function touchSession(session: TerminalSession): void {
   session.lastActivityAt = Date.now();
   if (session.cleanupTimer) {
@@ -259,6 +272,7 @@ function createTerminalSession(
   const session: TerminalSession = {
     id: sessionId,
     ownerUserId,
+    exitListeners: new Set<TerminalExitListener>(),
     listeners: new Set<TerminalOutputListener>(),
     cleanupTimer: null,
     lastActivityAt: Date.now(),
@@ -273,6 +287,7 @@ function createTerminalSession(
   });
 
   session.process.onExit(() => {
+    notifyTerminalSessionExit(session);
     destroyTerminalSession(session.id);
   });
 
@@ -330,11 +345,27 @@ export function createTerminalEventStream(
   const forwardOutput: TerminalOutputListener = (chunk) => {
     streamController?.enqueue(createSseFrame(chunk));
   };
+  const forwardExit: TerminalExitListener = () => {
+    if (!streamController) {
+      return;
+    }
+
+    streamController.enqueue(createSseEvent("terminal-exit", "exit"));
+
+    if (heartbeat) {
+      clearInterval(heartbeat);
+      heartbeat = null;
+    }
+
+    streamController.close();
+    streamController = null;
+  };
 
   return new ReadableStream<Uint8Array>({
     start(controller) {
       streamController = controller;
       session.listeners.add(forwardOutput);
+      session.exitListeners.add(forwardExit);
       touchSession(session);
 
       controller.enqueue(createSseComment("connected"));
@@ -351,6 +382,7 @@ export function createTerminalEventStream(
 
       streamController = null;
       session.listeners.delete(forwardOutput);
+      session.exitListeners.delete(forwardExit);
       scheduleSessionCleanup(session);
     },
   });
@@ -414,6 +446,7 @@ export function destroyTerminalSession(sessionId: string): void {
     clearTimeout(session.cleanupTimer);
   }
 
+  session.exitListeners.clear();
   session.listeners.clear();
   terminalSessions.delete(sessionId);
   session.process.kill();
