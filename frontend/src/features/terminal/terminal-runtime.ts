@@ -6,15 +6,12 @@ interface TerminalSize {
 }
 
 type OutputListener = (chunk: string) => void;
-type ErrorListener = (message: string) => void;
 type ConnectionListener = (isConnected: boolean) => void;
 type ExitListener = () => void;
 
 interface TerminalRuntime {
   buffer: string;
   connectionListeners: Set<ConnectionListener>;
-  connectionErrorTimer: ReturnType<typeof setTimeout> | null;
-  errorListeners: Set<ErrorListener>;
   eventSource: EventSource | null;
   exitListeners: Set<ExitListener>;
   isFlushingInput: boolean;
@@ -37,16 +34,12 @@ export interface TerminalRuntimeHandle {
   resize: (size: TerminalSize) => void;
   sendInput: (data: string) => void;
   subscribeConnection: (listener: ConnectionListener) => () => void;
-  subscribeError: (listener: ErrorListener) => () => void;
   subscribeExit: (listener: ExitListener) => () => void;
 }
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
-const CONNECTION_ERROR_DELAY_MS = 4_000;
 const MAX_INPUT_CHUNK_LENGTH = 8_192;
 const MAX_BUFFER_LENGTH = 1_000_000;
-const TERMINAL_CONNECTION_ERROR_MESSAGE =
-  "[terminal] Connection error. Check frontend server logs for terminal startup details.";
 const TERMINAL_BUFFER_STORAGE_PREFIX = "wc_terminal_buffer:";
 
 const runtimesBySessionId = new Map<string, TerminalRuntime>();
@@ -117,10 +110,6 @@ function appendToRuntimeBuffer(runtime: TerminalRuntime, chunk: string): void {
 
 function emitConnection(runtime: TerminalRuntime, isConnected: boolean): void {
   runtime.isConnected = isConnected;
-  if (isConnected && runtime.connectionErrorTimer) {
-    clearTimeout(runtime.connectionErrorTimer);
-    runtime.connectionErrorTimer = null;
-  }
 
   if (isConnected) {
     void flushPendingInput(runtime);
@@ -128,12 +117,6 @@ function emitConnection(runtime: TerminalRuntime, isConnected: boolean): void {
 
   for (const listener of runtime.connectionListeners) {
     listener(isConnected);
-  }
-}
-
-function emitError(runtime: TerminalRuntime, message: string): void {
-  for (const listener of runtime.errorListeners) {
-    listener(message);
   }
 }
 
@@ -153,24 +136,7 @@ function emitOutput(runtime: TerminalRuntime, chunk: string): void {
 function closeRuntime(runtime: TerminalRuntime): void {
   runtime.eventSource?.close();
   runtime.eventSource = null;
-  if (runtime.connectionErrorTimer) {
-    clearTimeout(runtime.connectionErrorTimer);
-    runtime.connectionErrorTimer = null;
-  }
   emitConnection(runtime, false);
-}
-
-function scheduleConnectionError(runtime: TerminalRuntime): void {
-  if (runtime.connectionErrorTimer) {
-    return;
-  }
-
-  runtime.connectionErrorTimer = setTimeout(() => {
-    runtime.connectionErrorTimer = null;
-    if (!runtime.isConnected) {
-      emitError(runtime, TERMINAL_CONNECTION_ERROR_MESSAGE);
-    }
-  }, CONNECTION_ERROR_DELAY_MS);
 }
 
 function splitInputIntoChunks(data: string): string[] {
@@ -272,7 +238,6 @@ function openRuntimeStream(runtime: TerminalRuntime, size: TerminalSize): void {
     }
 
     emitConnection(runtime, false);
-    scheduleConnectionError(runtime);
   };
 
   runtime.eventSource = eventSource;
@@ -286,13 +251,11 @@ function createRuntime(
     sessionId,
     refCount: 0,
     eventSource: null,
-    connectionErrorTimer: null,
     exitListeners: new Set<ExitListener>(),
     hasExited: false,
     isFlushingInput: false,
     pendingInput: [],
     outputListeners: new Set<OutputListener>(),
-    errorListeners: new Set<ErrorListener>(),
     connectionListeners: new Set<ConnectionListener>(),
     isConnected: false,
     buffer: readStoredBuffer(sessionId),
@@ -353,12 +316,6 @@ export function acquireTerminalRuntime(
         runtime.connectionListeners.delete(listener);
       };
     },
-    subscribeError(listener) {
-      runtime.errorListeners.add(listener);
-      return () => {
-        runtime.errorListeners.delete(listener);
-      };
-    },
     subscribeExit(listener) {
       runtime.exitListeners.add(listener);
       return () => {
@@ -376,7 +333,6 @@ export function disposeTerminalRuntime(sessionId: string): void {
 
   closeRuntime(runtime);
   runtime.outputListeners.clear();
-  runtime.errorListeners.clear();
   runtime.connectionListeners.clear();
   runtime.exitListeners.clear();
   runtime.pendingInput.length = 0;

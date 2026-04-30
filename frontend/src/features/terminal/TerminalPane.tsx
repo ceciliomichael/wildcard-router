@@ -159,11 +159,6 @@ export function TerminalPane({
         fitAndResize();
       }
     });
-    const unsubscribeError = runtime.subscribeError((message) => {
-      terminal.writeln("");
-      terminal.writeln(`\u001b[31m${message}\u001b[0m`);
-    });
-
     const unsubscribeExit = runtime.subscribeExit(() => {
       onExitRef.current(sessionId);
     });
@@ -190,7 +185,6 @@ export function TerminalPane({
       resizeObserver.disconnect();
       inputDisposable.dispose();
       unsubscribeExit();
-      unsubscribeError();
       unsubscribeConnection();
       outputAttachment.detach();
       runtime.release();
