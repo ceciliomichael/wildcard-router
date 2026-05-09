@@ -3,7 +3,8 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import { useEffect, useRef } from "react";
+import { Check, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { activateTerminalRenderer } from "./terminal-renderer";
 import { acquireTerminalRuntime } from "./terminal-runtime";
 import { createTerminalWriteBuffer } from "./terminal-write-buffer";
@@ -70,8 +71,24 @@ export function TerminalPane({
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
   const onExitRef = useRef(onExit);
+  const [selectedText, setSelectedText] = useState("");
+  const [copiedSelection, setCopiedSelection] = useState(false);
 
   onExitRef.current = onExit;
+
+  async function handleCopySelection(): Promise<void> {
+    if (selectedText.length === 0) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(selectedText);
+      setCopiedSelection(true);
+      window.setTimeout(() => setCopiedSelection(false), 1600);
+    } catch {
+      setCopiedSelection(false);
+    }
+  }
 
   useEffect(() => {
     const container = containerRef.current;
@@ -176,6 +193,10 @@ export function TerminalPane({
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
+    const selectionDisposable = terminal.onSelectionChange(() => {
+      setSelectedText(terminal.getSelection());
+      setCopiedSelection(false);
+    });
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -194,6 +215,7 @@ export function TerminalPane({
       window.removeEventListener("resize", handleWindowResize);
       resizeObserver.disconnect();
       inputDisposable.dispose();
+      selectionDisposable.dispose();
       unsubscribeExit();
       unsubscribeConnection();
       outputAttachment.detach();
@@ -208,6 +230,7 @@ export function TerminalPane({
 
   useEffect(() => {
     isActiveRef.current = isActive;
+    setCopiedSelection(false);
 
     if (!isActive) {
       return;
@@ -253,6 +276,45 @@ export function TerminalPane({
         visibility: isActive ? "visible" : "hidden",
       }}
     >
+      {selectedText.length > 0 ? (
+        <div
+          style={{
+            position: "absolute",
+            right: "0.75rem",
+            top: "0.75rem",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              void handleCopySelection();
+            }}
+            aria-label={copiedSelection ? "Copied selection" : "Copy selection"}
+            title={copiedSelection ? "Copied" : "Copy selection"}
+            style={{
+              minHeight: "2.25rem",
+              minWidth: "2.25rem",
+              padding: "0 0.75rem",
+              borderRadius: "999px",
+              border: "1px solid #2f2f2f",
+              background: "rgba(16, 16, 17, 0.92)",
+              color: "#ffffff",
+              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.28)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.45rem",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              pointerEvents: "auto",
+            }}
+          >
+            {copiedSelection ? <Check size={14} /> : <Copy size={14} />}
+            <span>{copiedSelection ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
+      ) : null}
       <div
         ref={containerRef}
         style={{
