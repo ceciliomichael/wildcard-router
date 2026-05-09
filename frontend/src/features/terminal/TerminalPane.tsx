@@ -4,7 +4,6 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef } from "react";
-import { activateTerminalRenderer } from "./terminal-renderer";
 import { acquireTerminalRuntime } from "./terminal-runtime";
 import { createTerminalWriteBuffer } from "./terminal-write-buffer";
 
@@ -101,7 +100,6 @@ export function TerminalPane({
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
     terminal.open(container);
-    const rendererActivation = activateTerminalRenderer(terminal);
     const outputWriter = createTerminalWriteBuffer(terminal);
 
     terminalRef.current = terminal;
@@ -210,7 +208,6 @@ export function TerminalPane({
       outputAttachment.detach();
       outputWriter.dispose();
       runtime.release();
-      rendererActivation.dispose();
       terminal.dispose();
       fitAddonRef.current = null;
       terminalRef.current = null;
