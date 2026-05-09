@@ -24,6 +24,19 @@ function parseDimension(value: string | null, fallback: number): number {
   return parsedValue;
 }
 
+function parseLastEventId(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsedValue = Number(value.trim());
+  if (!Number.isSafeInteger(parsedValue) || parsedValue < 0) {
+    return null;
+  }
+
+  return parsedValue;
+}
+
 export async function GET(request: NextRequest): Promise<Response> {
   try {
     const user = await resolveAuthenticatedUser(request);
@@ -47,6 +60,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       request.nextUrl.searchParams.get("rows"),
       DEFAULT_TERMINAL_ROWS,
     );
+    const lastEventId = parseLastEventId(request.headers.get("last-event-id"));
 
     const result = openTerminalSession(sessionId, user.id, { cols, rows });
     if (result.status === "missing_target") {
@@ -63,7 +77,9 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
 
       const response = new NextResponse(
-        createTerminalEventStream(retry.session),
+        createTerminalEventStream(retry.session, {
+          lastEventId,
+        }),
         {
           headers: {
             "Cache-Control": "no-cache, no-transform",
@@ -82,14 +98,19 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const { session } = result;
 
-    const response = new NextResponse(createTerminalEventStream(session), {
-      headers: {
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "X-Accel-Buffering": "no",
+    const response = new NextResponse(
+      createTerminalEventStream(session, {
+        lastEventId,
+      }),
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "X-Accel-Buffering": "no",
+        },
       },
-    });
+    );
 
     return response;
   } catch (error) {

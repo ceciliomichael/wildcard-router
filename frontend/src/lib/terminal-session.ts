@@ -23,14 +23,20 @@ export type TerminalOpenResult =
       status: "forbidden";
     };
 
-type TerminalOutputListener = (chunk: string) => void;
+type TerminalProcessOutputListener = (chunk: string) => void;
+type TerminalSessionOutputListener = (event: TerminalOutputEvent) => void;
 type TerminalExitListener = () => void;
+
+interface TerminalOutputEvent {
+  id: number;
+  chunk: string;
+}
 
 interface TerminalProcess {
   write(data: string): void;
   resize(cols: number, rows: number): void;
   kill(): void;
-  onData(listener: TerminalOutputListener): void;
+  onData(listener: TerminalProcessOutputListener): void;
   onExit(listener: TerminalExitListener): void;
 }
 
@@ -39,10 +45,17 @@ interface TerminalSession {
   ownerUserId: string;
   exitListeners: Set<TerminalExitListener>;
   process: TerminalProcess;
-  listeners: Set<TerminalOutputListener>;
+  listeners: Set<TerminalSessionOutputListener>;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
   lastActivityAt: number;
+  nextEventId: number;
   outputBuffer: string;
+  outputHistory: TerminalOutputEvent[];
+  outputHistoryLength: number;
+}
+
+interface TerminalEventStreamOptions {
+  lastEventId: number | null;
 }
 
 export interface TerminalSessionCookieOptions {
@@ -66,13 +79,18 @@ const TERMINAL_SSE_FLUSH_DELAY_MS = 8;
 const textEncoder = new TextEncoder();
 const terminalSessions = new Map<string, TerminalSession>();
 
-function createSseEvent(event: string, data: string): Uint8Array {
-  return textEncoder.encode(`event: ${event}\ndata: ${data}\n\n`);
+function createSseEvent(
+  event: string,
+  data: string,
+  eventId?: number,
+): Uint8Array {
+  const idLine = typeof eventId === "number" ? `id: ${eventId}\n` : "";
+  return textEncoder.encode(`${idLine}event: ${event}\ndata: ${data}\n\n`);
 }
 
 class SshTerminalProcess implements TerminalProcess {
   private readonly client = new Client();
-  private readonly dataListeners = new Set<TerminalOutputListener>();
+  private readonly dataListeners = new Set<TerminalProcessOutputListener>();
   private readonly exitListeners = new Set<TerminalExitListener>();
   private readonly pendingWrites: string[] = [];
   private channel: ClientChannel | null = null;
@@ -180,7 +198,7 @@ class SshTerminalProcess implements TerminalProcess {
     this.client.end();
   }
 
-  onData(listener: TerminalOutputListener): void {
+  onData(listener: TerminalProcessOutputListener): void {
     this.dataListeners.add(listener);
   }
 
@@ -223,30 +241,53 @@ function encodeBase64Chunk(chunk: string): string {
   return Buffer.from(chunk, "utf8").toString("base64");
 }
 
-function createSseFrame(chunk: string): Uint8Array {
-  return textEncoder.encode(`data: ${encodeBase64Chunk(chunk)}\n\n`);
+function createSseFrame(chunk: string, eventId?: number): Uint8Array {
+  const idLine = typeof eventId === "number" ? `id: ${eventId}\n` : "";
+  return textEncoder.encode(`${idLine}data: ${encodeBase64Chunk(chunk)}\n\n`);
 }
 
-function createSseComment(comment: string): Uint8Array {
-  return textEncoder.encode(`: ${comment}\n\n`);
+function createSseComment(comment: string, eventId?: number): Uint8Array {
+  const idLine = typeof eventId === "number" ? `id: ${eventId}\n` : "";
+  return textEncoder.encode(`${idLine}: ${comment}\n\n`);
 }
 
 function appendTerminalOutputBuffer(
   session: TerminalSession,
   chunk: string,
-): void {
+): TerminalOutputEvent | null {
   if (chunk.length === 0) {
-    return;
+    return null;
   }
 
+  const event: TerminalOutputEvent = {
+    id: session.nextEventId,
+    chunk,
+  };
+  session.nextEventId += 1;
   session.outputBuffer += chunk;
+  session.outputHistory.push(event);
+  session.outputHistoryLength += chunk.length;
+
   if (session.outputBuffer.length <= TERMINAL_OUTPUT_REPLAY_BUFFER_MAX_LENGTH) {
-    return;
+    return event;
   }
 
-  session.outputBuffer = session.outputBuffer.slice(
-    session.outputBuffer.length - TERMINAL_OUTPUT_REPLAY_BUFFER_MAX_LENGTH,
-  );
+  const trimLength =
+    session.outputBuffer.length - TERMINAL_OUTPUT_REPLAY_BUFFER_MAX_LENGTH;
+  session.outputBuffer = session.outputBuffer.slice(trimLength);
+
+  while (
+    session.outputHistory.length > 0 &&
+    session.outputHistoryLength > TERMINAL_OUTPUT_REPLAY_BUFFER_MAX_LENGTH
+  ) {
+    const removedEvent = session.outputHistory.shift();
+    if (!removedEvent) {
+      break;
+    }
+    session.outputHistoryLength -= removedEvent.chunk.length;
+  }
+
+  return event;
 }
 
 function enqueueSseFrame(
@@ -264,6 +305,7 @@ function enqueueSseFrame(
 function enqueueTerminalOutput(
   controller: ReadableStreamDefaultController<Uint8Array>,
   chunk: string,
+  eventId?: number,
 ): boolean {
   for (
     let index = 0;
@@ -272,6 +314,7 @@ function enqueueTerminalOutput(
   ) {
     const frame = createSseFrame(
       chunk.slice(index, index + TERMINAL_SSE_FRAME_MAX_LENGTH),
+      eventId,
     );
     if (!enqueueSseFrame(controller, frame)) {
       return false;
@@ -328,18 +371,24 @@ function createTerminalSession(
     id: sessionId,
     ownerUserId,
     exitListeners: new Set<TerminalExitListener>(),
-    listeners: new Set<TerminalOutputListener>(),
+    listeners: new Set<TerminalSessionOutputListener>(),
     cleanupTimer: null,
     lastActivityAt: Date.now(),
+    nextEventId: 1,
     outputBuffer: "",
+    outputHistory: [],
+    outputHistoryLength: 0,
     process,
   };
 
   session.process.onData((chunk) => {
     touchSession(session);
-    appendTerminalOutputBuffer(session, chunk);
+    const event = appendTerminalOutputBuffer(session, chunk);
+    if (!event) {
+      return;
+    }
     for (const listener of session.listeners) {
-      listener(chunk);
+      listener(event);
     }
   });
 
@@ -394,9 +443,10 @@ function getOrCreateTerminalSession(
 
 export function createTerminalEventStream(
   session: TerminalSession,
+  options: TerminalEventStreamOptions = { lastEventId: null },
 ): ReadableStream<Uint8Array> {
   let heartbeat: ReturnType<typeof setInterval> | null = null;
-  let pendingOutput = "";
+  let pendingOutputEvents: TerminalOutputEvent[] = [];
   let outputFlushTimer: ReturnType<typeof setTimeout> | null = null;
   let streamController: ReadableStreamDefaultController<Uint8Array> | null =
     null;
@@ -423,7 +473,7 @@ export function createTerminalEventStream(
     clearHeartbeat();
     clearOutputFlushTimer();
     streamController = null;
-    pendingOutput = "";
+    pendingOutputEvents = [];
     session.listeners.delete(forwardOutput);
     session.exitListeners.delete(forwardExit);
 
@@ -434,14 +484,17 @@ export function createTerminalEventStream(
 
   const flushOutput = (): void => {
     outputFlushTimer = null;
-    if (!streamController || pendingOutput.length === 0) {
+    if (!streamController || pendingOutputEvents.length === 0) {
       return;
     }
 
-    const output = pendingOutput;
-    pendingOutput = "";
-    if (!enqueueTerminalOutput(streamController, output)) {
-      detachStream(true);
+    const events = pendingOutputEvents;
+    pendingOutputEvents = [];
+    for (const event of events) {
+      if (!enqueueTerminalOutput(streamController, event.chunk, event.id)) {
+        detachStream(true);
+        return;
+      }
     }
   };
 
@@ -453,13 +506,17 @@ export function createTerminalEventStream(
     outputFlushTimer = setTimeout(flushOutput, TERMINAL_SSE_FLUSH_DELAY_MS);
   };
 
-  const forwardOutput: TerminalOutputListener = (chunk) => {
+  const forwardOutput: TerminalSessionOutputListener = (event) => {
     if (!streamController) {
       return;
     }
 
-    pendingOutput += chunk;
-    if (pendingOutput.length >= TERMINAL_SSE_FRAME_MAX_LENGTH) {
+    pendingOutputEvents.push(event);
+    const pendingOutputLength = pendingOutputEvents.reduce(
+      (totalLength, pendingEvent) => totalLength + pendingEvent.chunk.length,
+      0,
+    );
+    if (pendingOutputLength >= TERMINAL_SSE_FRAME_MAX_LENGTH) {
       flushOutput();
       return;
     }
@@ -477,7 +534,12 @@ export function createTerminalEventStream(
       return;
     }
 
-    enqueueSseFrame(controller, createSseEvent("terminal-exit", "exit"));
+    const exitEventId = session.nextEventId;
+    session.nextEventId += 1;
+    enqueueSseFrame(
+      controller,
+      createSseEvent("terminal-exit", "exit", exitEventId),
+    );
 
     detachStream(false);
     try {
@@ -495,12 +557,30 @@ export function createTerminalEventStream(
       touchSession(session);
 
       controller.enqueue(createSseComment("connected"));
-      if (
-        session.outputBuffer.length > 0 &&
-        !enqueueTerminalOutput(controller, session.outputBuffer)
-      ) {
-        detachStream(true);
-        return;
+      if (options.lastEventId === null && session.outputBuffer.length > 0) {
+        const latestOutputEventId = session.nextEventId - 1;
+        if (
+          !enqueueTerminalOutput(
+            controller,
+            session.outputBuffer,
+            latestOutputEventId,
+          )
+        ) {
+          detachStream(true);
+          return;
+        }
+      }
+
+      if (options.lastEventId !== null) {
+        for (const event of session.outputHistory) {
+          if (event.id <= options.lastEventId) {
+            continue;
+          }
+          if (!enqueueTerminalOutput(controller, event.chunk, event.id)) {
+            detachStream(true);
+            return;
+          }
+        }
       }
 
       heartbeat = setInterval(() => {
