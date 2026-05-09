@@ -176,7 +176,7 @@ export function TerminalPane({
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
-    const handleNativeContextMenuSelection = (): void => {
+    const syncNativeCopySelection = (): void => {
       const nativeCopyBridge = nativeCopyBridgeRef.current;
       if (!nativeCopyBridge) {
         return;
@@ -192,11 +192,27 @@ export function TerminalPane({
       nativeCopyBridge.select();
       nativeCopyBridge.setSelectionRange(0, selection.length);
     };
+    const handleRightClickPointerDown = (event: PointerEvent): void => {
+      if (event.button !== 2) {
+        return;
+      }
+
+      syncNativeCopySelection();
+    };
+    const handleRightClickMouseDown = (event: MouseEvent): void => {
+      if (event.button !== 2) {
+        return;
+      }
+
+      syncNativeCopySelection();
+    };
     container.addEventListener(
-      "contextmenu",
-      handleNativeContextMenuSelection,
+      "pointerdown",
+      handleRightClickPointerDown,
       true,
     );
+    container.addEventListener("mousedown", handleRightClickMouseDown, true);
+    container.addEventListener("contextmenu", syncNativeCopySelection, true);
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -214,8 +230,18 @@ export function TerminalPane({
     return () => {
       window.removeEventListener("resize", handleWindowResize);
       container.removeEventListener(
+        "pointerdown",
+        handleRightClickPointerDown,
+        true,
+      );
+      container.removeEventListener(
+        "mousedown",
+        handleRightClickMouseDown,
+        true,
+      );
+      container.removeEventListener(
         "contextmenu",
-        handleNativeContextMenuSelection,
+        syncNativeCopySelection,
         true,
       );
       resizeObserver.disconnect();
