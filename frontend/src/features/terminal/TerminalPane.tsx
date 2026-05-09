@@ -64,6 +64,7 @@ export function TerminalPane({
   isActive,
 }: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const nativeCopyBridgeRef = useRef<HTMLTextAreaElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
@@ -175,6 +176,27 @@ export function TerminalPane({
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
+    const handleNativeContextMenuSelection = (): void => {
+      const nativeCopyBridge = nativeCopyBridgeRef.current;
+      if (!nativeCopyBridge) {
+        return;
+      }
+
+      const selection = terminal.getSelection();
+      if (!selection) {
+        return;
+      }
+
+      nativeCopyBridge.value = selection;
+      nativeCopyBridge.focus();
+      nativeCopyBridge.select();
+      nativeCopyBridge.setSelectionRange(0, selection.length);
+    };
+    container.addEventListener(
+      "contextmenu",
+      handleNativeContextMenuSelection,
+      true,
+    );
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -191,6 +213,11 @@ export function TerminalPane({
 
     return () => {
       window.removeEventListener("resize", handleWindowResize);
+      container.removeEventListener(
+        "contextmenu",
+        handleNativeContextMenuSelection,
+        true,
+      );
       resizeObserver.disconnect();
       inputDisposable.dispose();
       unsubscribeExit();
@@ -256,6 +283,20 @@ export function TerminalPane({
         style={{
           height: "100%",
           width: "100%",
+        }}
+      />
+      <textarea
+        ref={nativeCopyBridgeRef}
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          pointerEvents: "none",
+          width: 1,
+          height: 1,
+          left: 0,
+          top: 0,
         }}
       />
     </div>
