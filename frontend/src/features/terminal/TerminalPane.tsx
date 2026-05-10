@@ -195,6 +195,19 @@ export function TerminalPane({
       nativeCopyBridge.style.width = "1px";
       nativeCopyBridge.style.height = "1px";
     };
+    const restoreTerminalFocus = (): void => {
+      const currentTerminal = terminalRef.current;
+      if (!currentTerminal) {
+        return;
+      }
+
+      try {
+        currentTerminal.focus();
+        currentTerminal.clearSelection();
+      } catch {
+        // Ignore focus restoration races when the browser menu is closing.
+      }
+    };
     const resetNativeCopyBridge = (): void => {
       clearScheduledNativeCopyBridgeCleanup();
 
@@ -210,6 +223,7 @@ export function TerminalPane({
       nativeCopyBridge.style.height = "1px";
       nativeCopyBridge.style.left = "0px";
       nativeCopyBridge.style.top = "0px";
+      restoreTerminalFocus();
     };
     const syncNativeCopySelection = (
       clientX?: number,
@@ -298,6 +312,16 @@ export function TerminalPane({
         nativeCopyBridgeCleanupRef.current = null;
       }, 0);
     };
+    const handleNativePaste = (event: ClipboardEvent): void => {
+      const pastedText = event.clipboardData?.getData("text/plain") ?? "";
+      if (pastedText.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      runtime.sendInput(pastedText);
+      resetNativeCopyBridge();
+    };
     container.addEventListener(
       "pointerdown",
       handleRightClickPointerDown,
@@ -305,6 +329,7 @@ export function TerminalPane({
     );
     container.addEventListener("mousedown", handleRightClickMouseDown, true);
     container.addEventListener("contextmenu", handleNativeContextMenu, true);
+    nativeCopyBridgeRef.current?.addEventListener("paste", handleNativePaste);
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -335,6 +360,10 @@ export function TerminalPane({
         "contextmenu",
         handleNativeContextMenu,
         true,
+      );
+      nativeCopyBridgeRef.current?.removeEventListener(
+        "paste",
+        handleNativePaste,
       );
       resetNativeCopyBridge();
       resizeObserver.disconnect();
