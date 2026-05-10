@@ -65,6 +65,7 @@ export function TerminalPane({
 }: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const nativeCopyBridgeRef = useRef<HTMLTextAreaElement | null>(null);
+  const nativeCopyBridgeCleanupRef = useRef<number | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
@@ -176,35 +177,126 @@ export function TerminalPane({
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
-    const syncNativeCopySelection = (): void => {
+    const clearScheduledNativeCopyBridgeCleanup = (): void => {
+      if (nativeCopyBridgeCleanupRef.current === null) {
+        return;
+      }
+
+      window.clearTimeout(nativeCopyBridgeCleanupRef.current);
+      nativeCopyBridgeCleanupRef.current = null;
+    };
+    const collapseNativeCopyBridge = (): void => {
       const nativeCopyBridge = nativeCopyBridgeRef.current;
       if (!nativeCopyBridge) {
         return;
       }
 
-      const selection = terminal.getSelection();
-      if (!selection) {
+      nativeCopyBridge.style.pointerEvents = "none";
+      nativeCopyBridge.style.width = "1px";
+      nativeCopyBridge.style.height = "1px";
+    };
+    const resetNativeCopyBridge = (): void => {
+      clearScheduledNativeCopyBridgeCleanup();
+
+      const nativeCopyBridge = nativeCopyBridgeRef.current;
+      if (!nativeCopyBridge) {
         return;
       }
 
+      nativeCopyBridge.value = "";
+      nativeCopyBridge.style.pointerEvents = "none";
+      nativeCopyBridge.style.opacity = "0";
+      nativeCopyBridge.style.width = "1px";
+      nativeCopyBridge.style.height = "1px";
+      nativeCopyBridge.style.left = "0px";
+      nativeCopyBridge.style.top = "0px";
+    };
+    const syncNativeCopySelection = (
+      clientX?: number,
+      clientY?: number,
+    ): boolean => {
+      const nativeCopyBridge = nativeCopyBridgeRef.current;
+      if (!nativeCopyBridge) {
+        return false;
+      }
+
+      const selection = terminal.getSelection();
+      if (!selection) {
+        resetNativeCopyBridge();
+        return false;
+      }
+
+      clearScheduledNativeCopyBridgeCleanup();
+
+      const containerRect = container.getBoundingClientRect();
+      const bridgeWidth = 24;
+      const bridgeHeight = 24;
+      const left =
+        clientX == null
+          ? 0
+          : Math.max(
+              0,
+              Math.min(
+                clientX - containerRect.left - bridgeWidth / 2,
+                containerRect.width - bridgeWidth,
+              ),
+            );
+      const top =
+        clientY == null
+          ? 0
+          : Math.max(
+              0,
+              Math.min(
+                clientY - containerRect.top - bridgeHeight / 2,
+                containerRect.height - bridgeHeight,
+              ),
+            );
+
       nativeCopyBridge.value = selection;
+      nativeCopyBridge.style.left = `${left}px`;
+      nativeCopyBridge.style.top = `${top}px`;
+      nativeCopyBridge.style.width = `${bridgeWidth}px`;
+      nativeCopyBridge.style.height = `${bridgeHeight}px`;
+      nativeCopyBridge.style.opacity = "0.01";
+      nativeCopyBridge.style.pointerEvents = "auto";
       nativeCopyBridge.focus();
       nativeCopyBridge.select();
       nativeCopyBridge.setSelectionRange(0, selection.length);
+      return true;
     };
     const handleRightClickPointerDown = (event: PointerEvent): void => {
+      if (event.button === 0) {
+        resetNativeCopyBridge();
+        return;
+      }
+
       if (event.button !== 2) {
         return;
       }
 
-      syncNativeCopySelection();
+      syncNativeCopySelection(event.clientX, event.clientY);
     };
     const handleRightClickMouseDown = (event: MouseEvent): void => {
+      if (event.button === 0) {
+        resetNativeCopyBridge();
+        return;
+      }
+
       if (event.button !== 2) {
         return;
       }
 
-      syncNativeCopySelection();
+      syncNativeCopySelection(event.clientX, event.clientY);
+    };
+    const handleNativeContextMenu = (event: MouseEvent): void => {
+      if (!syncNativeCopySelection(event.clientX, event.clientY)) {
+        return;
+      }
+
+      nativeCopyBridgeCleanupRef.current = window.setTimeout(() => {
+        collapseNativeCopyBridge();
+        nativeCopyBridgeCleanupRef.current = null;
+      }, 0);
     };
     container.addEventListener(
       "pointerdown",
@@ -212,7 +304,7 @@ export function TerminalPane({
       true,
     );
     container.addEventListener("mousedown", handleRightClickMouseDown, true);
-    container.addEventListener("contextmenu", syncNativeCopySelection, true);
+    container.addEventListener("contextmenu", handleNativeContextMenu, true);
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -241,9 +333,10 @@ export function TerminalPane({
       );
       container.removeEventListener(
         "contextmenu",
-        syncNativeCopySelection,
+        handleNativeContextMenu,
         true,
       );
+      resetNativeCopyBridge();
       resizeObserver.disconnect();
       inputDisposable.dispose();
       unsubscribeExit();
@@ -323,6 +416,7 @@ export function TerminalPane({
           height: 1,
           left: 0,
           top: 0,
+          zIndex: 3,
         }}
       />
     </div>
