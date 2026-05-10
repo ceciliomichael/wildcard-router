@@ -18,7 +18,7 @@ interface TerminalRuntime {
   isConnected: boolean;
   hasExited: boolean;
   pendingInput: string[];
-  pendingInputFlushTimer: number | null;
+  isInputFlushScheduled: boolean;
   outputListeners: Set<OutputListener>;
   refCount: number;
   sessionId: string;
@@ -40,7 +40,6 @@ export interface TerminalRuntimeHandle {
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
 const MAX_INPUT_BATCH_LENGTH = 16_384;
-const INPUT_FLUSH_DELAY_MS = 10;
 const MAX_BUFFER_LENGTH = 1_000_000;
 const LEGACY_TERMINAL_BUFFER_STORAGE_PREFIX = "wc_terminal_buffer:";
 
@@ -117,7 +116,7 @@ function emitOutput(runtime: TerminalRuntime, chunk: string): void {
 function closeRuntime(runtime: TerminalRuntime): void {
   runtime.eventSource?.close();
   runtime.eventSource = null;
-  clearPendingInputFlushTimer(runtime);
+  runtime.isInputFlushScheduled = false;
   emitConnection(runtime, false);
 }
 
@@ -161,29 +160,21 @@ function takePendingInputBatch(runtime: TerminalRuntime): string {
   return batch;
 }
 
-function clearPendingInputFlushTimer(runtime: TerminalRuntime): void {
-  if (runtime.pendingInputFlushTimer === null) {
-    return;
-  }
-
-  window.clearTimeout(runtime.pendingInputFlushTimer);
-  runtime.pendingInputFlushTimer = null;
-}
-
 function scheduleInputFlush(runtime: TerminalRuntime): void {
   if (
     runtime.hasExited ||
     runtime.pendingInput.length === 0 ||
     runtime.isFlushingInput ||
-    runtime.pendingInputFlushTimer !== null
+    runtime.isInputFlushScheduled
   ) {
     return;
   }
 
-  runtime.pendingInputFlushTimer = window.setTimeout(() => {
-    runtime.pendingInputFlushTimer = null;
+  runtime.isInputFlushScheduled = true;
+  queueMicrotask(() => {
+    runtime.isInputFlushScheduled = false;
     void flushPendingInput(runtime);
-  }, INPUT_FLUSH_DELAY_MS);
+  });
 }
 
 async function flushPendingInput(runtime: TerminalRuntime): Promise<void> {
@@ -197,7 +188,6 @@ async function flushPendingInput(runtime: TerminalRuntime): Promise<void> {
 
   runtime.isFlushingInput = true;
   let inputBatch = "";
-  clearPendingInputFlushTimer(runtime);
   try {
     inputBatch = takePendingInputBatch(runtime);
     if (inputBatch.length === 0) {
@@ -292,7 +282,7 @@ function createRuntime(
     hasExited: false,
     isFlushingInput: false,
     pendingInput: [],
-    pendingInputFlushTimer: null,
+    isInputFlushScheduled: false,
     outputListeners: new Set<OutputListener>(),
     connectionListeners: new Set<ConnectionListener>(),
     isConnected: false,
@@ -378,7 +368,7 @@ export function disposeTerminalRuntime(sessionId: string): void {
   runtime.connectionListeners.clear();
   runtime.exitListeners.clear();
   runtime.pendingInput.length = 0;
-  clearPendingInputFlushTimer(runtime);
+  runtime.isInputFlushScheduled = false;
   runtime.buffer = "";
   clearLegacyStoredBuffer(sessionId);
   runtimesBySessionId.delete(sessionId);

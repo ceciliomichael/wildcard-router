@@ -37,26 +37,22 @@ export function createTerminalWriteBuffer(
   terminal: Terminal,
 ): TerminalWriteBuffer {
   const pendingChunks: string[] = [];
-  let flushTimeoutId: number | null = null;
+  let isFlushScheduled = false;
   let isDisposed = false;
   let isWriting = false;
   let pendingLength = 0;
 
   const cancelScheduledFlush = (): void => {
-    if (flushTimeoutId === null) {
-      return;
-    }
-
-    window.clearTimeout(flushTimeoutId);
-    flushTimeoutId = null;
+    isFlushScheduled = false;
   };
 
   const scheduleFlush = (): void => {
-    if (isDisposed || flushTimeoutId !== null) {
+    if (isDisposed || isFlushScheduled) {
       return;
     }
 
-    flushTimeoutId = window.setTimeout(flush, 0);
+    isFlushScheduled = true;
+    queueMicrotask(flush);
   };
 
   const finishWrite = (): void => {
@@ -67,7 +63,7 @@ export function createTerminalWriteBuffer(
   };
 
   function flush(): void {
-    flushTimeoutId = null;
+    isFlushScheduled = false;
     if (isDisposed || isWriting || pendingLength === 0) {
       return;
     }
