@@ -2078,6 +2078,113 @@
       ],
       "createdAt": "2026-05-07T10:44:16.324Z",
       "updatedAt": "2026-05-07T10:44:16.324Z"
+    },
+    {
+      "memoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "rootMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "parentMemoryIds": [],
+      "relatedMemoryIds": [
+        "b13803f7-2403-45d0-b24b-c8d4123efd13",
+        "9039b37c-f87a-4372-98fa-e7941865f7e4",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "5e398d32-aab1-4856-9007-5b31b8241c1b",
+        "e34f8d37-c76e-4ac9-afd4-a084746000fc"
+      ],
+      "childMemoryIds": [
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548"
+      ],
+      "sectionKind": "fact",
+      "summary": "Implemented terminal interaction UX improvements so right-click no longer opens the browser context menu, right-click now copies selected terminal text, and paste now uses a controlled plain-text path that clears selection to avoid lingering highlight artifacts.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+          "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "inspected",
+          "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+          "notes": "No runtime/session API changes required."
+        }
+      ],
+      "createdAt": "2026-05-10T05:27:10.263Z",
+      "updatedAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "memoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "rootMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "parentMemoryIds": [
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600"
+      ],
+      "relatedMemoryIds": [
+        "b13803f7-2403-45d0-b24b-c8d4123efd13",
+        "9039b37c-f87a-4372-98fa-e7941865f7e4",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "5e398d32-aab1-4856-9007-5b31b8241c1b",
+        "e34f8d37-c76e-4ac9-afd4-a084746000fc"
+      ],
+      "childMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2"
+      ],
+      "sectionKind": "decision",
+      "summary": "Implemented terminal interaction UX improvements so right-click no longer opens the browser context menu, right-click now copies selected terminal text, and paste now uses a controlled plain-text path that clears selection to avoid lingering highlight artifacts.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+          "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "inspected",
+          "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+          "notes": "No runtime/session API changes required."
+        }
+      ],
+      "createdAt": "2026-05-10T05:27:10.351Z",
+      "updatedAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "memoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "rootMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "parentMemoryIds": [
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548"
+      ],
+      "relatedMemoryIds": [
+        "b13803f7-2403-45d0-b24b-c8d4123efd13",
+        "9039b37c-f87a-4372-98fa-e7941865f7e4",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "5e398d32-aab1-4856-9007-5b31b8241c1b",
+        "e34f8d37-c76e-4ac9-afd4-a084746000fc"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Implemented terminal interaction UX improvements so right-click no longer opens the browser context menu, right-click now copies selected terminal text, and paste now uses a controlled plain-text path that clears selection to avoid lingering highlight artifacts.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+          "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "inspected",
+          "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+          "notes": "No runtime/session API changes required."
+        }
+      ],
+      "createdAt": "2026-05-10T05:27:10.436Z",
+      "updatedAt": "2026-05-10T05:27:10.436Z"
     }
   ],
   "edges": [
@@ -4285,7 +4392,140 @@
       "relation": "related",
       "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
       "createdAt": "2026-05-07T10:44:16.324Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "b13803f7-2403-45d0-b24b-c8d4123efd13",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "9039b37c-f87a-4372-98fa-e7941865f7e4",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "5e398d32-aab1-4856-9007-5b31b8241c1b",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "e34f8d37-c76e-4ac9-afd4-a084746000fc",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.263Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "b13803f7-2403-45d0-b24b-c8d4123efd13",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "9039b37c-f87a-4372-98fa-e7941865f7e4",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "5e398d32-aab1-4856-9007-5b31b8241c1b",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "e34f8d37-c76e-4ac9-afd4-a084746000fc",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.351Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "b13803f7-2403-45d0-b24b-c8d4123efd13",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "9039b37c-f87a-4372-98fa-e7941865f7e4",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "5e398d32-aab1-4856-9007-5b31b8241c1b",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "toMemoryId": "e34f8d37-c76e-4ac9-afd4-a084746000fc",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-10T05:27:10.436Z"
     }
   ],
-  "updatedAt": "2026-05-07T10:44:16.326Z"
+  "updatedAt": "2026-05-10T05:27:10.437Z"
 }

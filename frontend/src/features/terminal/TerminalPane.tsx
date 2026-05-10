@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef } from "react";
+import { activateTerminalRenderer } from "./terminal-renderer";
 import { acquireTerminalRuntime } from "./terminal-runtime";
 import { createTerminalWriteBuffer } from "./terminal-write-buffer";
 
@@ -43,6 +44,41 @@ const TERMINAL_THEME = {
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
 
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (text.length === 0) {
+    return;
+  }
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fallback below for restricted clipboard permissions.
+    }
+  }
+
+  const fallbackInput = document.createElement("textarea");
+  fallbackInput.value = text;
+  fallbackInput.setAttribute("readonly", "true");
+  fallbackInput.style.position = "fixed";
+  fallbackInput.style.top = "-9999px";
+  fallbackInput.style.left = "-9999px";
+  document.body.append(fallbackInput);
+  fallbackInput.focus();
+  fallbackInput.select();
+
+  try {
+    document.execCommand("copy");
+  } finally {
+    fallbackInput.remove();
+  }
+}
+
+function getClipboardText(event: ClipboardEvent): string {
+  return event.clipboardData?.getData("text/plain") ?? "";
+}
+
 function areSizesEqual(left: TerminalSize, right: TerminalSize): boolean {
   return left.cols === right.cols && left.rows === right.rows;
 }
@@ -64,8 +100,6 @@ export function TerminalPane({
   isActive,
 }: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const nativeCopyBridgeRef = useRef<HTMLTextAreaElement | null>(null);
-  const nativeCopyBridgeCleanupRef = useRef<number | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
@@ -93,7 +127,6 @@ export function TerminalPane({
       fontWeightBold: 700,
       lineHeight: 1.25,
       rightClickSelectsWord: false,
-      screenReaderMode: true,
       rows: DEFAULT_TERMINAL_SIZE.rows,
       scrollOnUserInput: true,
       scrollback: 10000,
@@ -103,6 +136,7 @@ export function TerminalPane({
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
     terminal.open(container);
+    const rendererActivation = activateTerminalRenderer(terminal);
     const outputWriter = createTerminalWriteBuffer(terminal);
 
     terminalRef.current = terminal;
@@ -177,159 +211,37 @@ export function TerminalPane({
     const inputDisposable = terminal.onData((data) => {
       runtime.sendInput(data);
     });
-    const clearScheduledNativeCopyBridgeCleanup = (): void => {
-      if (nativeCopyBridgeCleanupRef.current === null) {
-        return;
-      }
 
-      window.clearTimeout(nativeCopyBridgeCleanupRef.current);
-      nativeCopyBridgeCleanupRef.current = null;
-    };
-    const collapseNativeCopyBridge = (): void => {
-      const nativeCopyBridge = nativeCopyBridgeRef.current;
-      if (!nativeCopyBridge) {
-        return;
-      }
-
-      nativeCopyBridge.style.pointerEvents = "none";
-      nativeCopyBridge.style.width = "1px";
-      nativeCopyBridge.style.height = "1px";
-    };
-    const restoreTerminalFocus = (): void => {
-      const currentTerminal = terminalRef.current;
-      if (!currentTerminal) {
-        return;
-      }
-
-      try {
-        currentTerminal.focus();
-        currentTerminal.clearSelection();
-      } catch {
-        // Ignore focus restoration races when the browser menu is closing.
-      }
-    };
-    const resetNativeCopyBridge = (): void => {
-      clearScheduledNativeCopyBridgeCleanup();
-
-      const nativeCopyBridge = nativeCopyBridgeRef.current;
-      if (!nativeCopyBridge) {
-        return;
-      }
-
-      nativeCopyBridge.value = "";
-      nativeCopyBridge.style.pointerEvents = "none";
-      nativeCopyBridge.style.opacity = "0";
-      nativeCopyBridge.style.width = "1px";
-      nativeCopyBridge.style.height = "1px";
-      nativeCopyBridge.style.left = "0px";
-      nativeCopyBridge.style.top = "0px";
-      restoreTerminalFocus();
-    };
-    const syncNativeCopySelection = (
-      clientX?: number,
-      clientY?: number,
-    ): boolean => {
-      const nativeCopyBridge = nativeCopyBridgeRef.current;
-      if (!nativeCopyBridge) {
-        return false;
-      }
-
-      const selection = terminal.getSelection();
-      if (!selection) {
-        resetNativeCopyBridge();
-        return false;
-      }
-
-      clearScheduledNativeCopyBridgeCleanup();
-
-      const containerRect = container.getBoundingClientRect();
-      const bridgeWidth = 24;
-      const bridgeHeight = 24;
-      const left =
-        clientX == null
-          ? 0
-          : Math.max(
-              0,
-              Math.min(
-                clientX - containerRect.left - bridgeWidth / 2,
-                containerRect.width - bridgeWidth,
-              ),
-            );
-      const top =
-        clientY == null
-          ? 0
-          : Math.max(
-              0,
-              Math.min(
-                clientY - containerRect.top - bridgeHeight / 2,
-                containerRect.height - bridgeHeight,
-              ),
-            );
-
-      nativeCopyBridge.value = selection;
-      nativeCopyBridge.style.left = `${left}px`;
-      nativeCopyBridge.style.top = `${top}px`;
-      nativeCopyBridge.style.width = `${bridgeWidth}px`;
-      nativeCopyBridge.style.height = `${bridgeHeight}px`;
-      nativeCopyBridge.style.opacity = "0.01";
-      nativeCopyBridge.style.pointerEvents = "auto";
-      nativeCopyBridge.focus();
-      nativeCopyBridge.select();
-      nativeCopyBridge.setSelectionRange(0, selection.length);
-      return true;
-    };
-    const handleRightClickPointerDown = (event: PointerEvent): void => {
-      if (event.button === 0) {
-        resetNativeCopyBridge();
-        return;
-      }
-
-      if (event.button !== 2) {
-        return;
-      }
-
-      syncNativeCopySelection(event.clientX, event.clientY);
-    };
-    const handleRightClickMouseDown = (event: MouseEvent): void => {
-      if (event.button === 0) {
-        resetNativeCopyBridge();
-        return;
-      }
-
-      if (event.button !== 2) {
-        return;
-      }
-
-      syncNativeCopySelection(event.clientX, event.clientY);
-    };
-    const handleNativeContextMenu = (event: MouseEvent): void => {
-      if (!syncNativeCopySelection(event.clientX, event.clientY)) {
-        return;
-      }
-
-      nativeCopyBridgeCleanupRef.current = window.setTimeout(() => {
-        collapseNativeCopyBridge();
-        nativeCopyBridgeCleanupRef.current = null;
-      }, 0);
-    };
-    const handleNativePaste = (event: ClipboardEvent): void => {
-      const pastedText = event.clipboardData?.getData("text/plain") ?? "";
-      if (pastedText.length === 0) {
-        return;
-      }
-
+    const handleContextMenu = (event: MouseEvent): void => {
       event.preventDefault();
-      runtime.sendInput(pastedText);
-      resetNativeCopyBridge();
+      event.stopPropagation();
+
+      const selectedText = terminal.getSelection();
+      if (selectedText.trim().length === 0) {
+        terminal.focus();
+        return;
+      }
+
+      void copyTextToClipboard(selectedText).finally(() => {
+        terminal.clearSelection();
+        terminal.focus();
+      });
     };
-    container.addEventListener(
-      "pointerdown",
-      handleRightClickPointerDown,
-      true,
-    );
-    container.addEventListener("mousedown", handleRightClickMouseDown, true);
-    container.addEventListener("contextmenu", handleNativeContextMenu, true);
-    nativeCopyBridgeRef.current?.addEventListener("paste", handleNativePaste);
+
+    const handlePaste = (event: ClipboardEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const text = getClipboardText(event);
+      terminal.clearSelection();
+      if (text.length > 0) {
+        terminal.paste(text);
+      }
+      terminal.focus();
+    };
+
+    container.addEventListener("contextmenu", handleContextMenu, true);
+    container.addEventListener("paste", handlePaste, true);
 
     const resizeObserver = new ResizeObserver(() => {
       scheduleFit();
@@ -346,26 +258,8 @@ export function TerminalPane({
 
     return () => {
       window.removeEventListener("resize", handleWindowResize);
-      container.removeEventListener(
-        "pointerdown",
-        handleRightClickPointerDown,
-        true,
-      );
-      container.removeEventListener(
-        "mousedown",
-        handleRightClickMouseDown,
-        true,
-      );
-      container.removeEventListener(
-        "contextmenu",
-        handleNativeContextMenu,
-        true,
-      );
-      nativeCopyBridgeRef.current?.removeEventListener(
-        "paste",
-        handleNativePaste,
-      );
-      resetNativeCopyBridge();
+      container.removeEventListener("contextmenu", handleContextMenu, true);
+      container.removeEventListener("paste", handlePaste, true);
       resizeObserver.disconnect();
       inputDisposable.dispose();
       unsubscribeExit();
@@ -373,6 +267,7 @@ export function TerminalPane({
       outputAttachment.detach();
       outputWriter.dispose();
       runtime.release();
+      rendererActivation.dispose();
       terminal.dispose();
       fitAddonRef.current = null;
       terminalRef.current = null;
@@ -431,21 +326,6 @@ export function TerminalPane({
         style={{
           height: "100%",
           width: "100%",
-        }}
-      />
-      <textarea
-        ref={nativeCopyBridgeRef}
-        aria-hidden="true"
-        tabIndex={-1}
-        style={{
-          position: "absolute",
-          opacity: 0,
-          pointerEvents: "none",
-          width: 1,
-          height: 1,
-          left: 0,
-          top: 0,
-          zIndex: 3,
         }}
       />
     </div>

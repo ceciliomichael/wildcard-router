@@ -1,5 +1,77 @@
 [
   {
+    "id": "fbbb7db8-c3a8-44a5-a422-e440b1101f38",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+    "sectionKind": "fact",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+    "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data.",
+    "createdAt": "2026-05-10T05:27:10.263Z",
+    "updatedAt": "2026-05-10T05:27:10.263Z"
+  },
+  {
+    "id": "dc5b0c77-6849-4d0c-9a58-e6f6aa87da87",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+    "sectionKind": "fact",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "inspected",
+    "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+    "notes": "No runtime/session API changes required.",
+    "createdAt": "2026-05-10T05:27:10.263Z",
+    "updatedAt": "2026-05-10T05:27:10.263Z"
+  },
+  {
+    "id": "a60f4c2e-3afd-4279-bb6d-17fe0e002a26",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+    "sectionKind": "decision",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+    "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data.",
+    "createdAt": "2026-05-10T05:27:10.351Z",
+    "updatedAt": "2026-05-10T05:27:10.351Z"
+  },
+  {
+    "id": "809bc436-7451-4498-bc12-a9e366e2e940",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+    "sectionKind": "decision",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "inspected",
+    "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+    "notes": "No runtime/session API changes required.",
+    "createdAt": "2026-05-10T05:27:10.351Z",
+    "updatedAt": "2026-05-10T05:27:10.351Z"
+  },
+  {
+    "id": "768953fa-dda5-4ff4-8efb-dadcb6d08d36",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+    "sectionKind": "task",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added right-click copy and controlled paste handlers, clipboard helper functions, and disabled xterm right-click word selection to fix terminal UX issues.",
+    "notes": "Context menu is suppressed in terminal; paste now clears selection and uses plain text clipboard data.",
+    "createdAt": "2026-05-10T05:27:10.436Z",
+    "updatedAt": "2026-05-10T05:27:10.436Z"
+  },
+  {
+    "id": "39291997-9f8f-4d9f-90b2-4b98fc4e5b09",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+    "sectionKind": "task",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "inspected",
+    "reason": "Reviewed existing terminal lifecycle and input wiring to ensure event-handler changes stayed scoped to presentation/input responsibility.",
+    "notes": "No runtime/session API changes required.",
+    "createdAt": "2026-05-10T05:27:10.436Z",
+    "updatedAt": "2026-05-10T05:27:10.436Z"
+  },
+  {
     "id": "5b65321b-bcbf-469b-a19f-ca4c0c87251b",
     "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
     "memoryId": "5e398d32-aab1-4856-9007-5b31b8241c1b",
