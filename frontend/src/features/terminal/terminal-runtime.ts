@@ -18,6 +18,7 @@ interface TerminalRuntime {
   isConnected: boolean;
   hasExited: boolean;
   pendingInput: string[];
+  pendingInputFlushTimer: number | null;
   outputListeners: Set<OutputListener>;
   refCount: number;
   sessionId: string;
@@ -38,7 +39,8 @@ export interface TerminalRuntimeHandle {
 }
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
-const MAX_INPUT_CHUNK_LENGTH = 8_192;
+const MAX_INPUT_BATCH_LENGTH = 16_384;
+const INPUT_FLUSH_DELAY_MS = 10;
 const MAX_BUFFER_LENGTH = 1_000_000;
 const LEGACY_TERMINAL_BUFFER_STORAGE_PREFIX = "wc_terminal_buffer:";
 
@@ -115,20 +117,73 @@ function emitOutput(runtime: TerminalRuntime, chunk: string): void {
 function closeRuntime(runtime: TerminalRuntime): void {
   runtime.eventSource?.close();
   runtime.eventSource = null;
+  clearPendingInputFlushTimer(runtime);
   emitConnection(runtime, false);
 }
 
 function splitInputIntoChunks(data: string): string[] {
-  if (data.length <= MAX_INPUT_CHUNK_LENGTH) {
+  if (data.length <= MAX_INPUT_BATCH_LENGTH) {
     return [data];
   }
 
   const chunks: string[] = [];
-  for (let index = 0; index < data.length; index += MAX_INPUT_CHUNK_LENGTH) {
-    chunks.push(data.slice(index, index + MAX_INPUT_CHUNK_LENGTH));
+  for (let index = 0; index < data.length; index += MAX_INPUT_BATCH_LENGTH) {
+    chunks.push(data.slice(index, index + MAX_INPUT_BATCH_LENGTH));
   }
 
   return chunks;
+}
+
+function takePendingInputBatch(runtime: TerminalRuntime): string {
+  let batch = "";
+
+  while (
+    runtime.pendingInput.length > 0 &&
+    batch.length < MAX_INPUT_BATCH_LENGTH
+  ) {
+    const nextInput = runtime.pendingInput[0];
+    if (typeof nextInput !== "string" || nextInput.length === 0) {
+      runtime.pendingInput.shift();
+      continue;
+    }
+
+    const remainingLength = MAX_INPUT_BATCH_LENGTH - batch.length;
+    if (nextInput.length <= remainingLength) {
+      batch += nextInput;
+      runtime.pendingInput.shift();
+      continue;
+    }
+
+    batch += nextInput.slice(0, remainingLength);
+    runtime.pendingInput[0] = nextInput.slice(remainingLength);
+  }
+
+  return batch;
+}
+
+function clearPendingInputFlushTimer(runtime: TerminalRuntime): void {
+  if (runtime.pendingInputFlushTimer === null) {
+    return;
+  }
+
+  window.clearTimeout(runtime.pendingInputFlushTimer);
+  runtime.pendingInputFlushTimer = null;
+}
+
+function scheduleInputFlush(runtime: TerminalRuntime): void {
+  if (
+    runtime.hasExited ||
+    runtime.pendingInput.length === 0 ||
+    runtime.isFlushingInput ||
+    runtime.pendingInputFlushTimer !== null
+  ) {
+    return;
+  }
+
+  runtime.pendingInputFlushTimer = window.setTimeout(() => {
+    runtime.pendingInputFlushTimer = null;
+    void flushPendingInput(runtime);
+  }, INPUT_FLUSH_DELAY_MS);
 }
 
 async function flushPendingInput(runtime: TerminalRuntime): Promise<void> {
@@ -141,37 +196,35 @@ async function flushPendingInput(runtime: TerminalRuntime): Promise<void> {
   }
 
   runtime.isFlushingInput = true;
+  let inputBatch = "";
+  clearPendingInputFlushTimer(runtime);
   try {
-    while (runtime.isConnected && runtime.pendingInput.length > 0) {
-      const nextInput = runtime.pendingInput[0];
-      if (typeof nextInput !== "string" || nextInput.length === 0) {
-        runtime.pendingInput.shift();
-        continue;
+    inputBatch = takePendingInputBatch(runtime);
+    if (inputBatch.length === 0) {
+      return;
+    }
+
+    const response = await fetchJson("/api/terminal/input", {
+      sessionId: runtime.sessionId,
+      data: inputBatch,
+    });
+
+    if (!response.ok) {
+      if (shouldDropPendingInput(response.status)) {
+        runtime.pendingInput.length = 0;
+      } else {
+        runtime.pendingInput.unshift(inputBatch);
       }
-
-      try {
-        const response = await fetchJson("/api/terminal/input", {
-          sessionId: runtime.sessionId,
-          data: nextInput,
-        });
-
-        if (!response.ok) {
-          if (shouldDropPendingInput(response.status)) {
-            runtime.pendingInput.length = 0;
-          }
-          break;
-        }
-
-        runtime.pendingInput.shift();
-      } catch {
-        break;
-      }
+    }
+  } catch {
+    if (inputBatch.length > 0) {
+      runtime.pendingInput.unshift(inputBatch);
     }
   } finally {
     runtime.isFlushingInput = false;
 
     if (runtime.isConnected && runtime.pendingInput.length > 0) {
-      void flushPendingInput(runtime);
+      scheduleInputFlush(runtime);
     }
   }
 }
@@ -182,7 +235,7 @@ function queueTerminalInput(runtime: TerminalRuntime, data: string): void {
   }
 
   runtime.pendingInput.push(...splitInputIntoChunks(data));
-  void flushPendingInput(runtime);
+  scheduleInputFlush(runtime);
 }
 
 function openRuntimeStream(runtime: TerminalRuntime, size: TerminalSize): void {
@@ -239,6 +292,7 @@ function createRuntime(
     hasExited: false,
     isFlushingInput: false,
     pendingInput: [],
+    pendingInputFlushTimer: null,
     outputListeners: new Set<OutputListener>(),
     connectionListeners: new Set<ConnectionListener>(),
     isConnected: false,
@@ -324,6 +378,7 @@ export function disposeTerminalRuntime(sessionId: string): void {
   runtime.connectionListeners.clear();
   runtime.exitListeners.clear();
   runtime.pendingInput.length = 0;
+  clearPendingInputFlushTimer(runtime);
   runtime.buffer = "";
   clearLegacyStoredBuffer(sessionId);
   runtimesBySessionId.delete(sessionId);

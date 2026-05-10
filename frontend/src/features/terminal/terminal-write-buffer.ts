@@ -37,26 +37,26 @@ export function createTerminalWriteBuffer(
   terminal: Terminal,
 ): TerminalWriteBuffer {
   const pendingChunks: string[] = [];
-  let animationFrameId: number | null = null;
+  let flushTimeoutId: number | null = null;
   let isDisposed = false;
   let isWriting = false;
   let pendingLength = 0;
 
   const cancelScheduledFlush = (): void => {
-    if (animationFrameId === null) {
+    if (flushTimeoutId === null) {
       return;
     }
 
-    window.cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
+    window.clearTimeout(flushTimeoutId);
+    flushTimeoutId = null;
   };
 
   const scheduleFlush = (): void => {
-    if (isDisposed || animationFrameId !== null) {
+    if (isDisposed || flushTimeoutId !== null) {
       return;
     }
 
-    animationFrameId = window.requestAnimationFrame(flush);
+    flushTimeoutId = window.setTimeout(flush, 0);
   };
 
   const finishWrite = (): void => {
@@ -67,7 +67,7 @@ export function createTerminalWriteBuffer(
   };
 
   function flush(): void {
-    animationFrameId = null;
+    flushTimeoutId = null;
     if (isDisposed || isWriting || pendingLength === 0) {
       return;
     }
