@@ -44,6 +44,82 @@ const TERMINAL_THEME = {
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
 
+interface LocalEchoState {
+  pendingEcho: string;
+}
+
+function isPrintableInputCharacter(character: string): boolean {
+  if (character.length !== 1) {
+    return false;
+  }
+
+  const codePoint = character.codePointAt(0);
+  if (codePoint == null) {
+    return false;
+  }
+
+  return codePoint >= 32 && codePoint !== 127;
+}
+
+function writeOptimisticInputEcho(
+  terminal: Terminal,
+  state: LocalEchoState,
+  data: string,
+): void {
+  let echo = "";
+
+  for (const character of data) {
+    if (character === "\r" || character === "\n") {
+      echo += "\r\n";
+      continue;
+    }
+
+    if (character === "\b" || character === "\u007f") {
+      echo += "\b \b";
+      continue;
+    }
+
+    if (isPrintableInputCharacter(character)) {
+      echo += character;
+    }
+  }
+
+  if (echo.length === 0) {
+    return;
+  }
+
+  state.pendingEcho += echo;
+  terminal.write(echo);
+}
+
+function consumeOptimisticEcho(state: LocalEchoState, chunk: string): string {
+  if (state.pendingEcho.length === 0 || chunk.length === 0) {
+    return chunk;
+  }
+
+  const pendingEcho = state.pendingEcho;
+  const maxLength = Math.min(pendingEcho.length, chunk.length);
+  let matchedLength = 0;
+
+  while (
+    matchedLength < maxLength &&
+    pendingEcho.charCodeAt(matchedLength) === chunk.charCodeAt(matchedLength)
+  ) {
+    matchedLength += 1;
+  }
+
+  if (matchedLength === 0) {
+    return chunk;
+  }
+
+  state.pendingEcho = pendingEcho.slice(matchedLength);
+  return chunk.slice(matchedLength);
+}
+
+function clearOptimisticEcho(state: LocalEchoState): void {
+  state.pendingEcho = "";
+}
+
 async function copyTextToClipboard(text: string): Promise<void> {
   if (text.length === 0) {
     return;
@@ -102,6 +178,7 @@ export function TerminalPane({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const optimisticEchoRef = useRef<LocalEchoState>({ pendingEcho: "" });
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
   const onExitRef = useRef(onExit);
@@ -193,10 +270,24 @@ export function TerminalPane({
     scheduleFit();
 
     const outputAttachment = runtime.attachOutput((chunk) => {
-      outputWriter.write(chunk);
+      const filteredChunk = consumeOptimisticEcho(
+        optimisticEchoRef.current,
+        chunk,
+      );
+      if (filteredChunk.length === 0) {
+        return;
+      }
+
+      outputWriter.write(filteredChunk);
     });
     if (outputAttachment.snapshot.length > 0) {
-      outputWriter.write(outputAttachment.snapshot);
+      const filteredSnapshot = consumeOptimisticEcho(
+        optimisticEchoRef.current,
+        outputAttachment.snapshot,
+      );
+      if (filteredSnapshot.length > 0) {
+        outputWriter.write(filteredSnapshot);
+      }
     }
 
     const unsubscribeConnection = runtime.subscribeConnection((connected) => {
@@ -209,6 +300,7 @@ export function TerminalPane({
     });
 
     const inputDisposable = terminal.onData((data) => {
+      writeOptimisticInputEcho(terminal, optimisticEchoRef.current, data);
       runtime.sendInput(data);
     });
 
@@ -266,6 +358,7 @@ export function TerminalPane({
       unsubscribeConnection();
       outputAttachment.detach();
       outputWriter.dispose();
+      clearOptimisticEcho(optimisticEchoRef.current);
       runtime.release();
       rendererActivation.dispose();
       terminal.dispose();
