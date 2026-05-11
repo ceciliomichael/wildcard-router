@@ -46,7 +46,21 @@ const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
 
 interface LocalEchoState {
   pendingEcho: string;
+  isEnabled: boolean;
+  outputTail: string;
 }
+
+const ALTERNATE_SCREEN_ENTER_MARKERS = [
+  "\u001b[?1047h",
+  "\u001b[?1048h",
+  "\u001b[?1049h",
+];
+const ALTERNATE_SCREEN_EXIT_MARKERS = [
+  "\u001b[?1047l",
+  "\u001b[?1048l",
+  "\u001b[?1049l",
+];
+const OPTIMISTIC_ECHO_OUTPUT_TAIL_LENGTH = 32;
 
 function isPrintableInputCharacter(character: string): boolean {
   if (character.length !== 1) {
@@ -66,7 +80,7 @@ function writeOptimisticInputEcho(
   state: LocalEchoState,
   data: string,
 ): void {
-  if (data.includes("\u001b")) {
+  if (!state.isEnabled || data.includes("\u001b")) {
     return;
   }
 
@@ -92,7 +106,11 @@ function writeOptimisticInputEcho(
 }
 
 function consumeOptimisticEcho(state: LocalEchoState, chunk: string): string {
-  if (state.pendingEcho.length === 0 || chunk.length === 0) {
+  if (
+    !state.isEnabled ||
+    state.pendingEcho.length === 0 ||
+    chunk.length === 0
+  ) {
     return chunk;
   }
 
@@ -117,6 +135,37 @@ function consumeOptimisticEcho(state: LocalEchoState, chunk: string): string {
 
 function clearOptimisticEcho(state: LocalEchoState): void {
   state.pendingEcho = "";
+}
+
+function updateOptimisticEchoMode(state: LocalEchoState, chunk: string): void {
+  if (chunk.length === 0) {
+    return;
+  }
+
+  const combinedOutput = `${state.outputTail}${chunk}`;
+  const hasEnterMarker = ALTERNATE_SCREEN_ENTER_MARKERS.some((marker) =>
+    combinedOutput.includes(marker),
+  );
+  const hasExitMarker = ALTERNATE_SCREEN_EXIT_MARKERS.some((marker) =>
+    combinedOutput.includes(marker),
+  );
+
+  let nextEnabled = state.isEnabled;
+  if (hasEnterMarker) {
+    nextEnabled = false;
+  }
+  if (hasExitMarker) {
+    nextEnabled = true;
+  }
+
+  state.outputTail = combinedOutput.slice(-OPTIMISTIC_ECHO_OUTPUT_TAIL_LENGTH);
+
+  if (nextEnabled === state.isEnabled) {
+    return;
+  }
+
+  state.isEnabled = nextEnabled;
+  clearOptimisticEcho(state);
 }
 
 async function copyTextToClipboard(text: string): Promise<void> {
@@ -177,7 +226,11 @@ export function TerminalPane({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const optimisticEchoRef = useRef<LocalEchoState>({ pendingEcho: "" });
+  const optimisticEchoRef = useRef<LocalEchoState>({
+    isEnabled: true,
+    pendingEcho: "",
+    outputTail: "",
+  });
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
   const onExitRef = useRef(onExit);
@@ -269,6 +322,7 @@ export function TerminalPane({
     scheduleFit();
 
     const outputAttachment = runtime.attachOutput((chunk) => {
+      updateOptimisticEchoMode(optimisticEchoRef.current, chunk);
       const filteredChunk = consumeOptimisticEcho(
         optimisticEchoRef.current,
         chunk,
@@ -280,6 +334,10 @@ export function TerminalPane({
       outputWriter.write(filteredChunk);
     });
     if (outputAttachment.snapshot.length > 0) {
+      updateOptimisticEchoMode(
+        optimisticEchoRef.current,
+        outputAttachment.snapshot,
+      );
       const filteredSnapshot = consumeOptimisticEcho(
         optimisticEchoRef.current,
         outputAttachment.snapshot,
@@ -359,6 +417,8 @@ export function TerminalPane({
       outputAttachment.detach();
       outputWriter.dispose();
       clearOptimisticEcho(optimisticEchoRef.current);
+      optimisticEchoRef.current.isEnabled = true;
+      optimisticEchoRef.current.outputTail = "";
       runtime.release();
       rendererActivation.dispose();
       terminal.dispose();

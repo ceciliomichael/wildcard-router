@@ -2274,6 +2274,183 @@
       ],
       "createdAt": "2026-05-11T02:49:52.313Z",
       "updatedAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "memoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "rootMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "parentMemoryIds": [
+        "40f12e70-5041-4021-b494-7c6ab040ac0e"
+      ],
+      "relatedMemoryIds": [
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2"
+      ],
+      "childMemoryIds": [
+        "8768dd6b-dd00-444b-b495-f09344d4898b"
+      ],
+      "sectionKind": "fact",
+      "summary": "Terminal tab numbering was made robust by switching to lowest-available-number allocation. The workspace now reuses Terminal 1 when it is free, but still guarantees unique tab labels across existing tabs and restores old saved state safely.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+          "notes": "Update affects add-tab, restore, and state normalization behavior."
+        }
+      ],
+      "createdAt": "2026-05-11T03:04:24.420Z",
+      "updatedAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "memoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "rootMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "parentMemoryIds": [
+        "82cf1e34-b0d7-4051-b004-ef86f2b26422"
+      ],
+      "relatedMemoryIds": [
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2"
+      ],
+      "childMemoryIds": [
+        "9b1237d2-abbb-4596-8028-8aa6d493862d"
+      ],
+      "sectionKind": "decision",
+      "summary": "Terminal tab numbering was made robust by switching to lowest-available-number allocation. The workspace now reuses Terminal 1 when it is free, but still guarantees unique tab labels across existing tabs and restores old saved state safely.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+          "notes": "Update affects add-tab, restore, and state normalization behavior."
+        }
+      ],
+      "createdAt": "2026-05-11T03:04:24.486Z",
+      "updatedAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "memoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "rootMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "parentMemoryIds": [
+        "8768dd6b-dd00-444b-b495-f09344d4898b"
+      ],
+      "relatedMemoryIds": [
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Terminal tab numbering was made robust by switching to lowest-available-number allocation. The workspace now reuses Terminal 1 when it is free, but still guarantees unique tab labels across existing tabs and restores old saved state safely.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+          "notes": "Update affects add-tab, restore, and state normalization behavior."
+        }
+      ],
+      "createdAt": "2026-05-11T03:04:24.549Z",
+      "updatedAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "memoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "rootMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "parentMemoryIds": [],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93"
+      ],
+      "childMemoryIds": [
+        "8157e0a7-83da-4ad3-bf16-e65464f89179"
+      ],
+      "sectionKind": "fact",
+      "summary": "Fixed terminal duplication in full-screen apps like nano by making optimistic local echo mode-aware. The client now disables local echo when alternate-screen terminal sequences are detected and re-enables it after exit, preventing duplicated typing and rough backspace behavior inside editors while preserving smooth shell prompt input.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+          "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit."
+        }
+      ],
+      "createdAt": "2026-05-11T09:03:31.753Z",
+      "updatedAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "memoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "rootMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "parentMemoryIds": [
+        "c7222651-68a4-410e-bef7-50b10aae2282"
+      ],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93"
+      ],
+      "childMemoryIds": [
+        "aea4d415-10d9-48df-872a-ecceb04ce192"
+      ],
+      "sectionKind": "decision",
+      "summary": "Fixed terminal duplication in full-screen apps like nano by making optimistic local echo mode-aware. The client now disables local echo when alternate-screen terminal sequences are detected and re-enables it after exit, preventing duplicated typing and rough backspace behavior inside editors while preserving smooth shell prompt input.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+          "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit."
+        }
+      ],
+      "createdAt": "2026-05-11T09:03:31.826Z",
+      "updatedAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "memoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "rootMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "parentMemoryIds": [
+        "8157e0a7-83da-4ad3-bf16-e65464f89179"
+      ],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "97f74826-1eca-43da-9e18-93a32cf83f58",
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Fixed terminal duplication in full-screen apps like nano by making optimistic local echo mode-aware. The client now disables local echo when alternate-screen terminal sequences are detected and re-enables it after exit, preventing duplicated typing and rough backspace behavior inside editors while preserving smooth shell prompt input.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+          "action": "modified",
+          "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+          "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit."
+        }
+      ],
+      "createdAt": "2026-05-11T09:03:31.898Z",
+      "updatedAt": "2026-05-11T09:03:31.898Z"
     }
   ],
   "edges": [
@@ -4747,7 +4924,259 @@
       "relation": "related",
       "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
       "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "toMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.420Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "toMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.486Z"
+    },
+    {
+      "fromMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "toMemoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "fromMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "fromMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "fromMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "fromMemoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T03:04:24.549Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "toMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.753Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "toMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.826Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
+    },
+    {
+      "fromMemoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T09:03:31.898Z"
     }
   ],
-  "updatedAt": "2026-05-11T02:49:52.315Z"
+  "updatedAt": "2026-05-11T09:03:31.898Z"
 }

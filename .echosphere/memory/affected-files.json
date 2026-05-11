@@ -1,5 +1,77 @@
 [
   {
+    "id": "00f5fb91-65c9-4c58-b3d9-5786c6d1d0e9",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "c7222651-68a4-410e-bef7-50b10aae2282",
+    "sectionKind": "fact",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+    "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit.",
+    "createdAt": "2026-05-11T09:03:31.753Z",
+    "updatedAt": "2026-05-11T09:03:31.753Z"
+  },
+  {
+    "id": "d6e5fb0a-274f-4e10-9455-1b2a9c9c82a6",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "8157e0a7-83da-4ad3-bf16-e65464f89179",
+    "sectionKind": "decision",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+    "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit.",
+    "createdAt": "2026-05-11T09:03:31.826Z",
+    "updatedAt": "2026-05-11T09:03:31.826Z"
+  },
+  {
+    "id": "c46429d9-64d9-4a8d-9627-7d4365c47077",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "aea4d415-10d9-48df-872a-ecceb04ce192",
+    "sectionKind": "task",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalPane.tsx",
+    "action": "modified",
+    "reason": "Added alternate-screen detection and mode-aware optimistic echo handling to stop duplication in nano/full-screen editors.",
+    "notes": "The file now disables local echo while the terminal is in alternate-screen mode and restores it on exit.",
+    "createdAt": "2026-05-11T09:03:31.898Z",
+    "updatedAt": "2026-05-11T09:03:31.898Z"
+  },
+  {
+    "id": "a4824605-29dc-467e-a867-de24f174d9c6",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "82cf1e34-b0d7-4051-b004-ef86f2b26422",
+    "sectionKind": "fact",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+    "notes": "Update affects add-tab, restore, and state normalization behavior.",
+    "createdAt": "2026-05-11T03:04:24.420Z",
+    "updatedAt": "2026-05-11T03:04:24.420Z"
+  },
+  {
+    "id": "00bca5f3-a4a6-4d9a-968f-952ec56bd54b",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "8768dd6b-dd00-444b-b495-f09344d4898b",
+    "sectionKind": "decision",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+    "notes": "Update affects add-tab, restore, and state normalization behavior.",
+    "createdAt": "2026-05-11T03:04:24.486Z",
+    "updatedAt": "2026-05-11T03:04:24.486Z"
+  },
+  {
+    "id": "51ee07ed-9457-4890-a46c-8ad2f27d9b89",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "9b1237d2-abbb-4596-8028-8aa6d493862d",
+    "sectionKind": "task",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Replaced counter-based tab numbering with lowest-available-number selection and kept restore logic backward compatible.",
+    "notes": "Update affects add-tab, restore, and state normalization behavior.",
+    "createdAt": "2026-05-11T03:04:24.549Z",
+    "updatedAt": "2026-05-11T03:04:24.549Z"
+  },
+  {
     "id": "b65c75a9-6ee5-4c6e-89e0-dbc452e2b6eb",
     "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
     "memoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
