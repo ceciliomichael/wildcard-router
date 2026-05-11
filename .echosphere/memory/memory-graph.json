@@ -2185,6 +2185,95 @@
       ],
       "createdAt": "2026-05-10T05:27:10.436Z",
       "updatedAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "memoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "rootMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "parentMemoryIds": [],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "e1d15c90-65fd-47dc-bc34-5daa9370af70"
+      ],
+      "childMemoryIds": [
+        "40f12e70-5041-4021-b494-7c6ab040ac0e"
+      ],
+      "sectionKind": "fact",
+      "summary": "Fixed terminal tab numbering so labels no longer reuse closed tab numbers. The workspace now persists a nextTabNumber counter and derives a safe fallback from existing Terminal N labels when restoring older saved state.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+          "notes": "Updated default state, restore path, add-tab path, and close-tab path."
+        }
+      ],
+      "createdAt": "2026-05-11T02:49:52.181Z",
+      "updatedAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "memoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "rootMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "parentMemoryIds": [
+        "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93"
+      ],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "e1d15c90-65fd-47dc-bc34-5daa9370af70"
+      ],
+      "childMemoryIds": [
+        "97f74826-1eca-43da-9e18-93a32cf83f58"
+      ],
+      "sectionKind": "decision",
+      "summary": "Fixed terminal tab numbering so labels no longer reuse closed tab numbers. The workspace now persists a nextTabNumber counter and derives a safe fallback from existing Terminal N labels when restoring older saved state.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+          "notes": "Updated default state, restore path, add-tab path, and close-tab path."
+        }
+      ],
+      "createdAt": "2026-05-11T02:49:52.249Z",
+      "updatedAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "memoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "graphGroupId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "rootMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "parentMemoryIds": [
+        "40f12e70-5041-4021-b494-7c6ab040ac0e"
+      ],
+      "relatedMemoryIds": [
+        "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+        "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+        "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+        "32c93e80-78fb-4108-8a03-4b84a8da7895",
+        "e1d15c90-65fd-47dc-bc34-5daa9370af70"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Fixed terminal tab numbering so labels no longer reuse closed tab numbers. The workspace now persists a nextTabNumber counter and derives a safe fallback from existing Terminal N labels when restoring older saved state.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+          "action": "modified",
+          "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+          "notes": "Updated default state, restore path, add-tab path, and close-tab path."
+        }
+      ],
+      "createdAt": "2026-05-11T02:49:52.313Z",
+      "updatedAt": "2026-05-11T02:49:52.313Z"
     }
   ],
   "edges": [
@@ -4525,7 +4614,140 @@
       "relation": "related",
       "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
       "createdAt": "2026-05-10T05:27:10.436Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "e1d15c90-65fd-47dc-bc34-5daa9370af70",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "toMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.181Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "e1d15c90-65fd-47dc-bc34-5daa9370af70",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "toMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.249Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "64e4c5b4-419f-4d07-bf66-a18bde7ef0c2",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "3db017b3-10c3-4b22-aa1a-ace707cd8548",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "32c93e80-78fb-4108-8a03-4b84a8da7895",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
+    },
+    {
+      "fromMemoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+      "toMemoryId": "e1d15c90-65fd-47dc-bc34-5daa9370af70",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+      "createdAt": "2026-05-11T02:49:52.313Z"
     }
   ],
-  "updatedAt": "2026-05-10T05:27:10.437Z"
+  "updatedAt": "2026-05-11T02:49:52.315Z"
 }

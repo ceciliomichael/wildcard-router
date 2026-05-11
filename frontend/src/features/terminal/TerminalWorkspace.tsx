@@ -19,6 +19,7 @@ interface TerminalTab {
 interface TerminalState {
   activeTabId: string | null;
   tabs: TerminalTab[];
+  nextTabNumber: number;
 }
 
 interface TerminalWorkspaceProps {
@@ -34,16 +35,19 @@ interface PersistedTerminalTab {
 interface PersistedTerminalState {
   activeTabId: string | null;
   tabs: PersistedTerminalTab[];
+  nextTabNumber?: number;
 }
 
-function createTabLabel(index: number): string {
-  return `Terminal ${index}`;
+const TERMINAL_LABEL_PREFIX = "Terminal ";
+
+function createTabLabel(tabNumber: number): string {
+  return `${TERMINAL_LABEL_PREFIX}${tabNumber}`;
 }
 
-function createTab(id: string, index: number): TerminalTab {
+function createTab(id: string, tabNumber: number): TerminalTab {
   return {
     id,
-    label: createTabLabel(index),
+    label: createTabLabel(tabNumber),
   };
 }
 
@@ -56,7 +60,21 @@ function createDefaultState(): TerminalState {
   return {
     activeTabId: id,
     tabs: [createTab(id, 1)],
+    nextTabNumber: 2,
   };
+}
+
+function getTerminalNumberFromLabel(label: string): number | null {
+  if (!label.startsWith(TERMINAL_LABEL_PREFIX)) {
+    return null;
+  }
+
+  const suffix = Number(label.slice(TERMINAL_LABEL_PREFIX.length));
+  if (!Number.isInteger(suffix) || suffix < 1) {
+    return null;
+  }
+
+  return suffix;
 }
 
 function isValidPersistedTab(tab: unknown): tab is PersistedTerminalTab {
@@ -85,14 +103,26 @@ function normalizeTerminalState(state: PersistedTerminalState): TerminalState {
     return {
       activeTabId: null,
       tabs: [],
+      nextTabNumber: 1,
     };
   }
 
   const activeTabExists = tabs.some((tab) => tab.id === state.activeTabId);
+  const highestTerminalNumber = tabs.reduce((highest, tab) => {
+    const parsedNumber = getTerminalNumberFromLabel(tab.label);
+    return parsedNumber && parsedNumber > highest ? parsedNumber : highest;
+  }, 0);
+  const nextTabNumber =
+    typeof state.nextTabNumber === "number" &&
+    Number.isInteger(state.nextTabNumber) &&
+    state.nextTabNumber > highestTerminalNumber
+      ? state.nextTabNumber
+      : highestTerminalNumber + 1;
 
   return {
     activeTabId: activeTabExists ? state.activeTabId : (tabs[0]?.id ?? null),
     tabs,
+    nextTabNumber,
   };
 }
 
@@ -115,6 +145,10 @@ function readPersistedState(key: string): TerminalState | null {
     return normalizeTerminalState({
       activeTabId: parsed.activeTabId ?? null,
       tabs: parsed.tabs,
+      nextTabNumber:
+        typeof parsed.nextTabNumber === "number"
+          ? parsed.nextTabNumber
+          : undefined,
     });
   } catch {
     return null;
@@ -189,11 +223,14 @@ export function TerminalWorkspace({
 
   const handleAddTab = (): void => {
     setState((currentState) => {
-      const nextIndex = currentState.tabs.length + 1;
-      const newTab = createTab(createTerminalTabId(), nextIndex);
+      const newTab = createTab(
+        createTerminalTabId(),
+        currentState.nextTabNumber,
+      );
       return {
         activeTabId: newTab.id,
         tabs: [...currentState.tabs, newTab],
+        nextTabNumber: currentState.nextTabNumber + 1,
       };
     });
   };
@@ -216,6 +253,7 @@ export function TerminalWorkspace({
         return {
           activeTabId: null,
           tabs: [],
+          nextTabNumber: currentState.nextTabNumber,
         };
       }
 
@@ -223,6 +261,7 @@ export function TerminalWorkspace({
         return {
           activeTabId: currentState.activeTabId,
           tabs: nextTabs,
+          nextTabNumber: currentState.nextTabNumber,
         };
       }
 
@@ -232,6 +271,7 @@ export function TerminalWorkspace({
       return {
         activeTabId: nextActiveTab.id,
         tabs: nextTabs,
+        nextTabNumber: currentState.nextTabNumber,
       };
     });
   };

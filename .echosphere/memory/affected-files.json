@@ -1,5 +1,41 @@
 [
   {
+    "id": "b65c75a9-6ee5-4c6e-89e0-dbc452e2b6eb",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "6c3c442f-89f6-4a3a-9bcb-adb7e63fef93",
+    "sectionKind": "fact",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+    "notes": "Updated default state, restore path, add-tab path, and close-tab path.",
+    "createdAt": "2026-05-11T02:49:52.181Z",
+    "updatedAt": "2026-05-11T02:49:52.181Z"
+  },
+  {
+    "id": "5a636a22-c467-4bf4-91dc-666cdb03ae8e",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "40f12e70-5041-4021-b494-7c6ab040ac0e",
+    "sectionKind": "decision",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+    "notes": "Updated default state, restore path, add-tab path, and close-tab path.",
+    "createdAt": "2026-05-11T02:49:52.249Z",
+    "updatedAt": "2026-05-11T02:49:52.249Z"
+  },
+  {
+    "id": "0f84bc9c-2239-4704-a4ea-725a60d320fd",
+    "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
+    "memoryId": "97f74826-1eca-43da-9e18-93a32cf83f58",
+    "sectionKind": "task",
+    "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\frontend\\src\\features\\terminal\\TerminalWorkspace.tsx",
+    "action": "modified",
+    "reason": "Added persistent nextTabNumber handling and label derivation logic so newly opened tabs never reuse closed tab labels.",
+    "notes": "Updated default state, restore path, add-tab path, and close-tab path.",
+    "createdAt": "2026-05-11T02:49:52.313Z",
+    "updatedAt": "2026-05-11T02:49:52.313Z"
+  },
+  {
     "id": "fbbb7db8-c3a8-44a5-a422-e440b1101f38",
     "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate",
     "memoryId": "74feb96b-7bcd-4bb8-8174-ae679b95a600",
