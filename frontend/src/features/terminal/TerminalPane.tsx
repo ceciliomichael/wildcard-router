@@ -74,11 +74,6 @@ function writeOptimisticInputEcho(
       continue;
     }
 
-    if (character === "\b" || character === "\u007f") {
-      echo += "\b \b";
-      continue;
-    }
-
     if (isPrintableInputCharacter(character)) {
       echo += character;
     }
