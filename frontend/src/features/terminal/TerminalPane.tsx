@@ -66,6 +66,10 @@ function writeOptimisticInputEcho(
   state: LocalEchoState,
   data: string,
 ): void {
+  if (data.includes("\u001b")) {
+    return;
+  }
+
   let echo = "";
 
   for (const character of data) {
@@ -322,7 +326,8 @@ export function TerminalPane({
       const text = getClipboardText(event);
       terminal.clearSelection();
       if (text.length > 0) {
-        terminal.paste(text);
+        writeOptimisticInputEcho(terminal, optimisticEchoRef.current, text);
+        runtime.sendInput(text);
       }
       terminal.focus();
     };

@@ -103,7 +103,12 @@ function normalizeTerminalState(state: PersistedTerminalState): TerminalState {
     return {
       activeTabId: null,
       tabs: [],
-      nextTabNumber: 1,
+      nextTabNumber:
+        typeof state.nextTabNumber === "number" &&
+        Number.isInteger(state.nextTabNumber) &&
+        state.nextTabNumber > 0
+          ? state.nextTabNumber
+          : 1,
     };
   }
 
