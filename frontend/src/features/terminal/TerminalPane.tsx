@@ -4,6 +4,13 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef } from "react";
+import {
+  clearOptimisticEcho,
+  consumeOptimisticEcho,
+  createLocalEchoState,
+  updateOptimisticEchoMode,
+  writeOptimisticInputEcho,
+} from "./terminal-local-echo";
 import { activateTerminalRenderer } from "./terminal-renderer";
 import { acquireTerminalRuntime } from "./terminal-runtime";
 import { createTerminalWriteBuffer } from "./terminal-write-buffer";
@@ -43,130 +50,6 @@ const TERMINAL_THEME = {
 };
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 120, rows: 30 };
-
-interface LocalEchoState {
-  pendingEcho: string;
-  isEnabled: boolean;
-  outputTail: string;
-}
-
-const ALTERNATE_SCREEN_ENTER_MARKERS = [
-  "\u001b[?1047h",
-  "\u001b[?1048h",
-  "\u001b[?1049h",
-];
-const ALTERNATE_SCREEN_EXIT_MARKERS = [
-  "\u001b[?1047l",
-  "\u001b[?1048l",
-  "\u001b[?1049l",
-];
-const OPTIMISTIC_ECHO_OUTPUT_TAIL_LENGTH = 32;
-
-function isPrintableInputCharacter(character: string): boolean {
-  if (character.length !== 1) {
-    return false;
-  }
-
-  const codePoint = character.codePointAt(0);
-  if (codePoint == null) {
-    return false;
-  }
-
-  return codePoint >= 32 && codePoint !== 127;
-}
-
-function writeOptimisticInputEcho(
-  terminal: Terminal,
-  state: LocalEchoState,
-  data: string,
-): void {
-  if (!state.isEnabled || data.includes("\u001b")) {
-    return;
-  }
-
-  let echo = "";
-
-  for (const character of data) {
-    if (character === "\r" || character === "\n") {
-      echo += "\r\n";
-      continue;
-    }
-
-    if (isPrintableInputCharacter(character)) {
-      echo += character;
-    }
-  }
-
-  if (echo.length === 0) {
-    return;
-  }
-
-  state.pendingEcho += echo;
-  terminal.write(echo);
-}
-
-function consumeOptimisticEcho(state: LocalEchoState, chunk: string): string {
-  if (
-    !state.isEnabled ||
-    state.pendingEcho.length === 0 ||
-    chunk.length === 0
-  ) {
-    return chunk;
-  }
-
-  const pendingEcho = state.pendingEcho;
-  const maxLength = Math.min(pendingEcho.length, chunk.length);
-  let matchedLength = 0;
-
-  while (
-    matchedLength < maxLength &&
-    pendingEcho.charCodeAt(matchedLength) === chunk.charCodeAt(matchedLength)
-  ) {
-    matchedLength += 1;
-  }
-
-  if (matchedLength === 0) {
-    return chunk;
-  }
-
-  state.pendingEcho = pendingEcho.slice(matchedLength);
-  return chunk.slice(matchedLength);
-}
-
-function clearOptimisticEcho(state: LocalEchoState): void {
-  state.pendingEcho = "";
-}
-
-function updateOptimisticEchoMode(state: LocalEchoState, chunk: string): void {
-  if (chunk.length === 0) {
-    return;
-  }
-
-  const combinedOutput = `${state.outputTail}${chunk}`;
-  const hasEnterMarker = ALTERNATE_SCREEN_ENTER_MARKERS.some((marker) =>
-    combinedOutput.includes(marker),
-  );
-  const hasExitMarker = ALTERNATE_SCREEN_EXIT_MARKERS.some((marker) =>
-    combinedOutput.includes(marker),
-  );
-
-  let nextEnabled = state.isEnabled;
-  if (hasEnterMarker) {
-    nextEnabled = false;
-  }
-  if (hasExitMarker) {
-    nextEnabled = true;
-  }
-
-  state.outputTail = combinedOutput.slice(-OPTIMISTIC_ECHO_OUTPUT_TAIL_LENGTH);
-
-  if (nextEnabled === state.isEnabled) {
-    return;
-  }
-
-  state.isEnabled = nextEnabled;
-  clearOptimisticEcho(state);
-}
 
 async function copyTextToClipboard(text: string): Promise<void> {
   if (text.length === 0) {
@@ -226,11 +109,7 @@ export function TerminalPane({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const optimisticEchoRef = useRef<LocalEchoState>({
-    isEnabled: true,
-    pendingEcho: "",
-    outputTail: "",
-  });
+  const optimisticEchoRef = useRef(createLocalEchoState());
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
   const onExitRef = useRef(onExit);
