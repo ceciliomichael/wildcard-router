@@ -436,6 +436,7 @@ export function RouteTable({
                 <RouteCard
                   key={route.id}
                   route={route}
+                  isFirst={index === 0}
                   isLast={index === filtered.length - 1}
                   isToggling={isTogglingId === route.id}
                   onEdit={onEdit}
@@ -464,6 +465,7 @@ export function RouteTable({
                     <RouteRow
                       key={route.id}
                       route={route}
+                      isFirst={index === 0}
                       isLast={index === filtered.length - 1}
                       isToggling={isTogglingId === route.id}
                       onEdit={onEdit}
@@ -501,7 +503,11 @@ export function RouteTable({
           .route-cards-mobile { display: none; }
           .route-table-desktop { display: block; overflow-x: auto; }
           .route-table-desktop .route-row td {
+            border-top: 1px solid var(--color-border);
             border-bottom: none;
+          }
+          .route-table-desktop .route-row-first td {
+            border-top: none;
           }
           .route-table-desktop .route-row-last td {
             border-bottom: 1px solid var(--color-border);
@@ -522,6 +528,7 @@ export function RouteTable({
 
 interface RouteCardProps {
   route: Route;
+  isFirst: boolean;
   isLast: boolean;
   isToggling: boolean;
   onEdit: (r: Route) => void;
@@ -533,6 +540,7 @@ interface RouteCardProps {
 
 function RouteCard({
   route,
+  isFirst,
   isLast,
   isToggling,
   onEdit,
@@ -547,6 +555,7 @@ function RouteCard({
     <div
       style={{
         padding: "1rem",
+        borderTop: isFirst ? "none" : "1px solid var(--color-border)",
         borderBottom: isLast ? "1px solid var(--color-border)" : "none",
         background: "var(--color-surface)",
       }}
@@ -775,6 +784,7 @@ function RouteCard({
 
 interface RouteRowProps {
   route: Route;
+  isFirst: boolean;
   isLast: boolean;
   isToggling: boolean;
   onEdit: (r: Route) => void;
@@ -786,6 +796,7 @@ interface RouteRowProps {
 
 function RouteRow({
   route,
+  isFirst,
   isLast,
   isToggling,
   onEdit,
@@ -797,7 +808,15 @@ function RouteRow({
   const href = createSubdomainHref(route.subdomain, siteLocation);
 
   return (
-    <tr className={isLast ? "route-row route-row-last" : "route-row"}>
+    <tr
+      className={[
+        "route-row",
+        isFirst ? "route-row-first" : "",
+        isLast ? "route-row-last" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <td>
         {href ? (
           <a
