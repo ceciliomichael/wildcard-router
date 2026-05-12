@@ -40,7 +40,7 @@ const filterOptions = [
   { value: "enabled", label: "Enabled" },
   { value: "disabled", label: "Disabled" },
 ] as const;
-const routePanelHeight = "min(34rem, calc(100dvh - 16rem))";
+const routePanelHeight = "min(42rem, calc(100dvh - 12rem))";
 
 function isFilterState(value: string): value is FilterState {
   return value === "all" || value === "enabled" || value === "disabled";
