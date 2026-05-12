@@ -432,10 +432,11 @@ export function RouteTable({
           <>
             {/* ── Mobile card list (< 640px) ── */}
             <div className="route-cards-mobile">
-              {filtered.map((route) => (
+              {filtered.map((route, index) => (
                 <RouteCard
                   key={route.id}
                   route={route}
+                  isLast={index === filtered.length - 1}
                   isToggling={isTogglingId === route.id}
                   onEdit={onEdit}
                   onToggle={onToggle}
@@ -459,10 +460,11 @@ export function RouteTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((route) => (
+                  {filtered.map((route, index) => (
                     <RouteRow
                       key={route.id}
                       route={route}
+                      isLast={index === filtered.length - 1}
                       isToggling={isTogglingId === route.id}
                       onEdit={onEdit}
                       onToggle={onToggle}
@@ -498,6 +500,12 @@ export function RouteTable({
         @media (min-width: 640px) {
           .route-cards-mobile { display: none; }
           .route-table-desktop { display: block; overflow-x: auto; }
+          .route-table-desktop .route-row td {
+            border-bottom: none;
+          }
+          .route-table-desktop .route-row-last td {
+            border-bottom: 1px solid var(--color-border);
+          }
           .route-table-scroll thead th {
             position: sticky;
             top: 0;
@@ -514,6 +522,7 @@ export function RouteTable({
 
 interface RouteCardProps {
   route: Route;
+  isLast: boolean;
   isToggling: boolean;
   onEdit: (r: Route) => void;
   onToggle: (r: Route) => void;
@@ -524,6 +533,7 @@ interface RouteCardProps {
 
 function RouteCard({
   route,
+  isLast,
   isToggling,
   onEdit,
   onToggle,
@@ -537,7 +547,7 @@ function RouteCard({
     <div
       style={{
         padding: "1rem",
-        borderBottom: "1px solid var(--color-border)",
+        borderBottom: isLast ? "1px solid var(--color-border)" : "none",
         background: "var(--color-surface)",
       }}
     >
@@ -765,6 +775,7 @@ function RouteCard({
 
 interface RouteRowProps {
   route: Route;
+  isLast: boolean;
   isToggling: boolean;
   onEdit: (r: Route) => void;
   onToggle: (r: Route) => void;
@@ -775,6 +786,7 @@ interface RouteRowProps {
 
 function RouteRow({
   route,
+  isLast,
   isToggling,
   onEdit,
   onToggle,
@@ -785,7 +797,7 @@ function RouteRow({
   const href = createSubdomainHref(route.subdomain, siteLocation);
 
   return (
-    <tr>
+    <tr className={isLast ? "route-row route-row-last" : "route-row"}>
       <td>
         {href ? (
           <a
