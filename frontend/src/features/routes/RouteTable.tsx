@@ -40,6 +40,7 @@ const filterOptions = [
   { value: "enabled", label: "Enabled" },
   { value: "disabled", label: "Disabled" },
 ] as const;
+const routePanelHeight = "min(34rem, calc(100dvh - 16rem))";
 
 function isFilterState(value: string): value is FilterState {
   return value === "all" || value === "enabled" || value === "disabled";
@@ -398,79 +399,93 @@ export function RouteTable({
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        height: routePanelHeight,
+        minHeight: 0,
       }}
     >
       {toolbar}
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          hasRoutes={routes.length > 0}
-          hasFilters={
-            search.trim().length > 0 ||
-            filter !== "all" ||
-            normalizedOwnerFilter !== ROUTE_OWNER_FILTER_ALL
-          }
-          onAdd={onAdd}
-          onClear={() => {
-            setSearch("");
-            setFilter("all");
-            setOwnerFilter(ROUTE_OWNER_FILTER_ALL);
-          }}
-        />
-      ) : (
-        <>
-          {/* ── Mobile card list (< 640px) ── */}
-          <div className="route-cards-mobile">
-            {filtered.map((route) => (
-              <RouteCard
-                key={route.id}
-                route={route}
-                isToggling={isTogglingId === route.id}
-                onEdit={onEdit}
-                onToggle={onToggle}
-                onDelete={onDelete}
-                showOwner={showOwner}
-                siteLocation={siteLocation}
-              />
-            ))}
-          </div>
+      <div
+        className="route-table-scroll"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+        }}
+      >
+        {filtered.length === 0 ? (
+          <EmptyState
+            hasRoutes={routes.length > 0}
+            hasFilters={
+              search.trim().length > 0 ||
+              filter !== "all" ||
+              normalizedOwnerFilter !== ROUTE_OWNER_FILTER_ALL
+            }
+            onAdd={onAdd}
+            onClear={() => {
+              setSearch("");
+              setFilter("all");
+              setOwnerFilter(ROUTE_OWNER_FILTER_ALL);
+            }}
+          />
+        ) : (
+          <>
+            {/* ── Mobile card list (< 640px) ── */}
+            <div className="route-cards-mobile">
+              {filtered.map((route) => (
+                <RouteCard
+                  key={route.id}
+                  route={route}
+                  isToggling={isTogglingId === route.id}
+                  onEdit={onEdit}
+                  onToggle={onToggle}
+                  onDelete={onDelete}
+                  showOwner={showOwner}
+                  siteLocation={siteLocation}
+                />
+              ))}
+            </div>
 
-          {/* ── Desktop table (≥ 640px) ── */}
-          <div className="route-table-desktop">
-            <table className="data-table" style={{ minWidth: "520px" }}>
-              <thead>
-                <tr>
-                  <th>Subdomain</th>
-                  <th>Destination</th>
-                  <th>Status</th>
-                  <th>Updated</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((route) => (
-                  <RouteRow
-                    key={route.id}
-                    route={route}
-                    isToggling={isTogglingId === route.id}
-                    onEdit={onEdit}
-                    onToggle={onToggle}
-                    onDelete={onDelete}
-                    showOwner={showOwner}
-                    siteLocation={siteLocation}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+            {/* ── Desktop table (≥ 640px) ── */}
+            <div className="route-table-desktop">
+              <table className="data-table" style={{ minWidth: "520px" }}>
+                <thead>
+                  <tr>
+                    <th>Subdomain</th>
+                    <th>Destination</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((route) => (
+                    <RouteRow
+                      key={route.id}
+                      route={route}
+                      isToggling={isTogglingId === route.id}
+                      onEdit={onEdit}
+                      onToggle={onToggle}
+                      onDelete={onDelete}
+                      showOwner={showOwner}
+                      siteLocation={siteLocation}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
 
       {footer}
 
       <style>{`
         .route-cards-mobile { display: flex; flex-direction: column; }
         .route-table-desktop { display: none; }
+        .route-table-scroll {
+          min-height: 0;
+        }
         .route-subdomain-link {
           display: inline-block;
           transition: color 0.15s ease, text-decoration-color 0.15s ease;
@@ -483,6 +498,11 @@ export function RouteTable({
         @media (min-width: 640px) {
           .route-cards-mobile { display: none; }
           .route-table-desktop { display: block; overflow-x: auto; }
+          .route-table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+          }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
