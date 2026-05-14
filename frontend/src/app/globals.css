@@ -353,6 +353,7 @@
     top: calc(100% + 0.35rem);
     right: 0;
     min-width: 8rem;
+    max-height: min(16rem, calc(100dvh - 2rem));
     padding: 0.3rem;
     border-radius: 0.75rem;
     border: 1px solid var(--color-border);
@@ -361,6 +362,8 @@
     z-index: 1000;
     display: grid;
     gap: 0.15rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .custom-dropdown__item {
