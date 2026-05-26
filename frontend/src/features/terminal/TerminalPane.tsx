@@ -4,13 +4,6 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef } from "react";
-import {
-  clearOptimisticEcho,
-  consumeOptimisticEcho,
-  createLocalEchoState,
-  updateOptimisticEchoMode,
-  writeOptimisticInputEcho,
-} from "./terminal-local-echo";
 import { activateTerminalRenderer } from "./terminal-renderer";
 import { acquireTerminalRuntime } from "./terminal-runtime";
 import { createTerminalWriteBuffer } from "./terminal-write-buffer";
@@ -109,7 +102,6 @@ export function TerminalPane({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const optimisticEchoRef = useRef(createLocalEchoState());
   const lastKnownSizeRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const isActiveRef = useRef(isActive);
   const onExitRef = useRef(onExit);
@@ -201,29 +193,12 @@ export function TerminalPane({
     scheduleFit();
 
     const outputAttachment = runtime.attachOutput((chunk) => {
-      updateOptimisticEchoMode(optimisticEchoRef.current, chunk);
-      const filteredChunk = consumeOptimisticEcho(
-        optimisticEchoRef.current,
-        chunk,
-      );
-      if (filteredChunk.length === 0) {
-        return;
+      if (chunk.length > 0) {
+        outputWriter.write(chunk);
       }
-
-      outputWriter.write(filteredChunk);
     });
     if (outputAttachment.snapshot.length > 0) {
-      updateOptimisticEchoMode(
-        optimisticEchoRef.current,
-        outputAttachment.snapshot,
-      );
-      const filteredSnapshot = consumeOptimisticEcho(
-        optimisticEchoRef.current,
-        outputAttachment.snapshot,
-      );
-      if (filteredSnapshot.length > 0) {
-        outputWriter.write(filteredSnapshot);
-      }
+      outputWriter.write(outputAttachment.snapshot);
     }
 
     const unsubscribeConnection = runtime.subscribeConnection((connected) => {
@@ -236,7 +211,6 @@ export function TerminalPane({
     });
 
     const inputDisposable = terminal.onData((data) => {
-      writeOptimisticInputEcho(terminal, optimisticEchoRef.current, data);
       runtime.sendInput(data);
     });
 
@@ -263,7 +237,6 @@ export function TerminalPane({
       const text = getClipboardText(event);
       terminal.clearSelection();
       if (text.length > 0) {
-        writeOptimisticInputEcho(terminal, optimisticEchoRef.current, text);
         runtime.sendInput(text);
       }
       terminal.focus();
@@ -295,9 +268,6 @@ export function TerminalPane({
       unsubscribeConnection();
       outputAttachment.detach();
       outputWriter.dispose();
-      clearOptimisticEcho(optimisticEchoRef.current);
-      optimisticEchoRef.current.isEnabled = true;
-      optimisticEchoRef.current.outputTail = "";
       runtime.release();
       rendererActivation.dispose();
       terminal.dispose();
