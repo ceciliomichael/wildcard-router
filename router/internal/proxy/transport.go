@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	upstreamConnectTimeout         = 2 * time.Second
-	upstreamTLSHandshakeTimeout    = 2 * time.Second
-	upstreamResponseHeaderTimeout  = 3 * time.Second
-	upstreamExpectContinueTimeout  = 1 * time.Second
+	upstreamConnectTimeout         = 5 * time.Second
+	upstreamTLSHandshakeTimeout    = 5 * time.Second
+	upstreamResponseHeaderTimeout  = 15 * time.Second
+	upstreamExpectContinueTimeout  = 2 * time.Second
 	upstreamKeepAliveTimeout       = 30 * time.Second
 )
 

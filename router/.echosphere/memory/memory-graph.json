@@ -1,0 +1,142 @@
+{
+  "nodes": [
+    {
+      "memoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "rootMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "parentMemoryIds": [],
+      "relatedMemoryIds": [],
+      "childMemoryIds": [
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22"
+      ],
+      "sectionKind": "fact",
+      "summary": "Increased RouteGate upstream proxy timeouts to reduce false 503 maintenance responses when the backend is reachable but slower to respond. The change was limited to the router transport layer, raising dial/TLS/header timeouts while preserving the rest of the proxy behavior. Validation could not be run from the current workspace because the RouteGate repo is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Adjusted upstream timeout constants to give proxied backends more time before the router emits its own 503 maintenance response.",
+          "notes": "Connect/TLS timeout set to 5s, response header timeout set to 15s, expect-continue timeout set to 2s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed the router forwards requests with ReverseProxy and only emits 503 via maintenance handling when upstream access fails or times out.",
+          "notes": "No behavior changes made here."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "inspected",
+          "reason": "Verified the existing upstream timeout values before making the change so the edit stayed minimal and targeted.",
+          "notes": "This file defines the transport timeouts used by the reverse proxy."
+        }
+      ],
+      "createdAt": "2026-05-27T04:08:16.165Z",
+      "updatedAt": "2026-05-27T04:08:16.165Z"
+    },
+    {
+      "memoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "rootMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "parentMemoryIds": [
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf"
+      ],
+      "relatedMemoryIds": [],
+      "childMemoryIds": [
+        "cb625993-43c0-4893-9389-7bb4750e7e3a"
+      ],
+      "sectionKind": "decision",
+      "summary": "Increased RouteGate upstream proxy timeouts to reduce false 503 maintenance responses when the backend is reachable but slower to respond. The change was limited to the router transport layer, raising dial/TLS/header timeouts while preserving the rest of the proxy behavior. Validation could not be run from the current workspace because the RouteGate repo is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Adjusted upstream timeout constants to give proxied backends more time before the router emits its own 503 maintenance response.",
+          "notes": "Connect/TLS timeout set to 5s, response header timeout set to 15s, expect-continue timeout set to 2s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed the router forwards requests with ReverseProxy and only emits 503 via maintenance handling when upstream access fails or times out.",
+          "notes": "No behavior changes made here."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "inspected",
+          "reason": "Verified the existing upstream timeout values before making the change so the edit stayed minimal and targeted.",
+          "notes": "This file defines the transport timeouts used by the reverse proxy."
+        }
+      ],
+      "createdAt": "2026-05-27T04:08:16.232Z",
+      "updatedAt": "2026-05-27T04:08:16.232Z"
+    },
+    {
+      "memoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "rootMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "parentMemoryIds": [
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22"
+      ],
+      "relatedMemoryIds": [],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Increased RouteGate upstream proxy timeouts to reduce false 503 maintenance responses when the backend is reachable but slower to respond. The change was limited to the router transport layer, raising dial/TLS/header timeouts while preserving the rest of the proxy behavior. Validation could not be run from the current workspace because the RouteGate repo is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Adjusted upstream timeout constants to give proxied backends more time before the router emits its own 503 maintenance response.",
+          "notes": "Connect/TLS timeout set to 5s, response header timeout set to 15s, expect-continue timeout set to 2s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed the router forwards requests with ReverseProxy and only emits 503 via maintenance handling when upstream access fails or times out.",
+          "notes": "No behavior changes made here."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "inspected",
+          "reason": "Verified the existing upstream timeout values before making the change so the edit stayed minimal and targeted.",
+          "notes": "This file defines the transport timeouts used by the reverse proxy."
+        }
+      ],
+      "createdAt": "2026-05-27T04:08:16.295Z",
+      "updatedAt": "2026-05-27T04:08:16.295Z"
+    }
+  ],
+  "edges": [
+    {
+      "fromMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T04:08:16.165Z"
+    },
+    {
+      "fromMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T04:08:16.232Z"
+    },
+    {
+      "fromMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "toMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T04:08:16.232Z"
+    },
+    {
+      "fromMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T04:08:16.295Z"
+    }
+  ],
+  "updatedAt": "2026-05-27T04:08:16.296Z"
+}
