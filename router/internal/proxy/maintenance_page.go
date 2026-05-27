@@ -7,6 +7,8 @@ import (
 
 type maintenancePageData struct {
 	RequestedHost string
+	StatusCode    int
+	StatusText    string
 }
 
 var maintenancePageTemplate = template.Must(template.New("maintenance-page").Parse(`<!doctype html>
@@ -15,7 +17,7 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>503 - Service temporarily unavailable</title>
+  <title>{{.StatusCode}} - {{.StatusText}}</title>
   <style>
     :root {
       color-scheme: light;
@@ -137,8 +139,8 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
       <section class="shell" aria-labelledby="maintenance-title">
         <p class="eyebrow">RouteGate</p>
         <h1 id="maintenance-title">
-          <span class="heading-line">This destination</span>
-          <span class="heading-line nowrap">is temporarily unavailable.</span>
+          <span class="heading-line">{{.StatusCode}} - {{.StatusText}}</span>
+          <span class="heading-line nowrap">The destination is temporarily unavailable.</span>
         </h1>
         <p>
           We could not connect to the destination for <strong class="host">{{.RequestedHost}}</strong>.
@@ -152,18 +154,30 @@ var maintenancePageTemplate = template.Must(template.New("maintenance-page").Par
 </body>
 </html>`))
 
-func (h *Handler) writeMaintenancePage(
+func (h *Handler) writeUnavailablePage(
 	writer http.ResponseWriter,
 	host string,
+	statusCode int,
 ) {
-	data := maintenancePageData{RequestedHost: host}
+	data := maintenancePageData{
+		RequestedHost: host,
+		StatusCode:    statusCode,
+		StatusText:    http.StatusText(statusCode),
+	}
+
+	if data.StatusText == "" {
+		data.StatusText = "Upstream Unavailable"
+	}
 
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	writer.Header().Set("Cache-Control", "no-store")
 	writer.Header().Set("X-Robots-Tag", "noindex, nofollow")
-	writer.WriteHeader(http.StatusServiceUnavailable)
+	if statusCode == http.StatusGatewayTimeout {
+		writer.Header().Set("Retry-After", "30")
+	}
+	writer.WriteHeader(statusCode)
 
 	if err := maintenancePageTemplate.Execute(writer, data); err != nil {
-		http.Error(writer, "upstream unavailable", http.StatusServiceUnavailable)
+		http.Error(writer, "upstream unavailable", statusCode)
 	}
 }

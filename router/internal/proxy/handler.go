@@ -2,8 +2,10 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -221,12 +223,13 @@ func (h *Handler) proxyFor(destination string, insecureSkipTLSVerify bool) (*htt
 		}
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
-		h.logger.Printf("upstream error for %s: %v", normalizedDestination, err)
+		statusCode := h.classifyUpstreamError(err)
+		h.logger.Printf("upstream error for %s status=%d: %v", normalizedDestination, statusCode, err)
 		displayHost := normalizeHost(extractForwardedHost(request))
 		if displayHost == "" {
 			displayHost = normalizeHost(request.Host)
 		}
-		h.writeMaintenancePage(writer, displayHost)
+		h.writeUnavailablePage(writer, displayHost, statusCode)
 	}
 
 	h.mu.Lock()
@@ -305,4 +308,26 @@ func redirectToHTTPS(writer http.ResponseWriter, request *http.Request, host str
 		RawQuery: request.URL.RawQuery,
 	}
 	http.Redirect(writer, request, target.String(), http.StatusMovedPermanently)
+}
+
+func (h *Handler) classifyUpstreamError(err error) int {
+	if err == nil {
+		return http.StatusBadGateway
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return http.StatusGatewayTimeout
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return http.StatusGatewayTimeout
+	}
+
+	message := strings.ToLower(err.Error())
+	if strings.Contains(message, "timeout") || strings.Contains(message, "deadline exceeded") {
+		return http.StatusGatewayTimeout
+	}
+
+	return http.StatusBadGateway
 }

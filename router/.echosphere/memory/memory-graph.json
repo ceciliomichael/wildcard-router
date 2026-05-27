@@ -106,6 +106,284 @@
       ],
       "createdAt": "2026-05-27T04:08:16.295Z",
       "updatedAt": "2026-05-27T04:08:16.295Z"
+    },
+    {
+      "memoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "rootMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "parentMemoryIds": [
+        "cb625993-43c0-4893-9389-7bb4750e7e3a"
+      ],
+      "relatedMemoryIds": [
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22"
+      ],
+      "childMemoryIds": [
+        "cdc54a65-9c90-49fb-80fd-2110d1b52012"
+      ],
+      "sectionKind": "fact",
+      "summary": "Raised RouteGate router upstream timeouts again to further reduce false 503 maintenance responses caused by slow but reachable backend connections. The transport layer now waits significantly longer before failing a proxied upstream request, while leaving routing and request forwarding unchanged. Validation still could not be run from the current workspace because the RouteGate repository is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Raised upstream proxy timeout values to give backends more time before RouteGate returns a maintenance-page 503.",
+          "notes": "Connect/TLS timeout set to 10s, response header timeout set to 30s, expect-continue timeout set to 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed that the router’s 503 behavior comes from upstream failure handling in the reverse proxy path, so timeout tuning is the correct low-risk adjustment.",
+          "notes": "No code changes in this file for this step."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "inspected",
+          "reason": "Confirmed that upstream failures are surfaced as the router-generated 503 maintenance page rather than a backend-provided response.",
+          "notes": "No code changes in this file for this step."
+        }
+      ],
+      "createdAt": "2026-05-27T05:54:16.408Z",
+      "updatedAt": "2026-05-27T05:54:16.408Z"
+    },
+    {
+      "memoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "rootMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "parentMemoryIds": [
+        "61c17bf1-bad5-4843-9ec6-b343c8515a1d"
+      ],
+      "relatedMemoryIds": [
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22"
+      ],
+      "childMemoryIds": [
+        "0349878e-80d0-4371-9965-a2d683cf8810"
+      ],
+      "sectionKind": "decision",
+      "summary": "Raised RouteGate router upstream timeouts again to further reduce false 503 maintenance responses caused by slow but reachable backend connections. The transport layer now waits significantly longer before failing a proxied upstream request, while leaving routing and request forwarding unchanged. Validation still could not be run from the current workspace because the RouteGate repository is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Raised upstream proxy timeout values to give backends more time before RouteGate returns a maintenance-page 503.",
+          "notes": "Connect/TLS timeout set to 10s, response header timeout set to 30s, expect-continue timeout set to 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed that the router’s 503 behavior comes from upstream failure handling in the reverse proxy path, so timeout tuning is the correct low-risk adjustment.",
+          "notes": "No code changes in this file for this step."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "inspected",
+          "reason": "Confirmed that upstream failures are surfaced as the router-generated 503 maintenance page rather than a backend-provided response.",
+          "notes": "No code changes in this file for this step."
+        }
+      ],
+      "createdAt": "2026-05-27T05:54:16.489Z",
+      "updatedAt": "2026-05-27T05:54:16.489Z"
+    },
+    {
+      "memoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "rootMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "parentMemoryIds": [
+        "cdc54a65-9c90-49fb-80fd-2110d1b52012"
+      ],
+      "relatedMemoryIds": [
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Raised RouteGate router upstream timeouts again to further reduce false 503 maintenance responses caused by slow but reachable backend connections. The transport layer now waits significantly longer before failing a proxied upstream request, while leaving routing and request forwarding unchanged. Validation still could not be run from the current workspace because the RouteGate repository is outside the active workspace root.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Raised upstream proxy timeout values to give backends more time before RouteGate returns a maintenance-page 503.",
+          "notes": "Connect/TLS timeout set to 10s, response header timeout set to 30s, expect-continue timeout set to 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "inspected",
+          "reason": "Confirmed that the router’s 503 behavior comes from upstream failure handling in the reverse proxy path, so timeout tuning is the correct low-risk adjustment.",
+          "notes": "No code changes in this file for this step."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "inspected",
+          "reason": "Confirmed that upstream failures are surfaced as the router-generated 503 maintenance page rather than a backend-provided response.",
+          "notes": "No code changes in this file for this step."
+        }
+      ],
+      "createdAt": "2026-05-27T05:54:16.563Z",
+      "updatedAt": "2026-05-27T05:54:16.563Z"
+    },
+    {
+      "memoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "rootMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "parentMemoryIds": [
+        "61c17bf1-bad5-4843-9ec6-b343c8515a1d"
+      ],
+      "relatedMemoryIds": [
+        "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+        "0349878e-80d0-4371-9965-a2d683cf8810",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf"
+      ],
+      "childMemoryIds": [
+        "a578a85c-c28d-43e1-91a7-65d93ef8088d"
+      ],
+      "sectionKind": "fact",
+      "summary": "Improved RouteGate router resilience for upstream API traffic. The proxy now waits longer for upstream response headers and no longer labels every transport failure as a 503; timeouts are surfaced as 504 Gateway Timeout, while connection/handshake-type failures are surfaced as 502 Bad Gateway. A new test suite verifies the status classification, and the router test suite passes locally from the active workspace shell by cd-ing into the RouteGate repo.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Extended upstream response-header timeout so slower backends have more time before the router fails the request.",
+          "notes": "ResponseHeaderTimeout increased to 60s; connect/TLS remain 10s and expect-continue remains 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "modified",
+          "reason": "Changed proxy error handling to classify upstream failures into 502 vs 504 and route them through the new unavailable-page response path.",
+          "notes": "Added classifyUpstreamError helper and improved logging with status codes."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "modified",
+          "reason": "Made the upstream-failure HTML page dynamic so it can render the actual returned status code and status text instead of always showing a 503 page.",
+          "notes": "Adds Retry-After for gateway timeouts."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler_error_test.go",
+          "action": "created",
+          "reason": "Added focused tests to verify timeout errors map to 504 and connection failures map to 502.",
+          "notes": "Covers the new error classification behavior."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport_test.go",
+          "action": "inspected",
+          "reason": "Verified the upstream transport timeout tests remain aligned with the new timeout constants.",
+          "notes": "No code changes required after the timeout update."
+        }
+      ],
+      "createdAt": "2026-05-27T06:44:28.508Z",
+      "updatedAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "memoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "rootMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "parentMemoryIds": [
+        "028a6469-3a9d-419e-adb8-09309adcdee3"
+      ],
+      "relatedMemoryIds": [
+        "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+        "0349878e-80d0-4371-9965-a2d683cf8810",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf"
+      ],
+      "childMemoryIds": [
+        "e11d2b78-6b80-4495-8eb8-36aa078a590d"
+      ],
+      "sectionKind": "decision",
+      "summary": "Improved RouteGate router resilience for upstream API traffic. The proxy now waits longer for upstream response headers and no longer labels every transport failure as a 503; timeouts are surfaced as 504 Gateway Timeout, while connection/handshake-type failures are surfaced as 502 Bad Gateway. A new test suite verifies the status classification, and the router test suite passes locally from the active workspace shell by cd-ing into the RouteGate repo.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Extended upstream response-header timeout so slower backends have more time before the router fails the request.",
+          "notes": "ResponseHeaderTimeout increased to 60s; connect/TLS remain 10s and expect-continue remains 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "modified",
+          "reason": "Changed proxy error handling to classify upstream failures into 502 vs 504 and route them through the new unavailable-page response path.",
+          "notes": "Added classifyUpstreamError helper and improved logging with status codes."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "modified",
+          "reason": "Made the upstream-failure HTML page dynamic so it can render the actual returned status code and status text instead of always showing a 503 page.",
+          "notes": "Adds Retry-After for gateway timeouts."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler_error_test.go",
+          "action": "created",
+          "reason": "Added focused tests to verify timeout errors map to 504 and connection failures map to 502.",
+          "notes": "Covers the new error classification behavior."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport_test.go",
+          "action": "inspected",
+          "reason": "Verified the upstream transport timeout tests remain aligned with the new timeout constants.",
+          "notes": "No code changes required after the timeout update."
+        }
+      ],
+      "createdAt": "2026-05-27T06:44:28.606Z",
+      "updatedAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "memoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "graphGroupId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "rootMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "parentMemoryIds": [
+        "a578a85c-c28d-43e1-91a7-65d93ef8088d"
+      ],
+      "relatedMemoryIds": [
+        "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+        "0349878e-80d0-4371-9965-a2d683cf8810",
+        "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+        "fa9aa59f-60c5-4176-a27c-594a9dd387bf"
+      ],
+      "childMemoryIds": [],
+      "sectionKind": "task",
+      "summary": "Improved RouteGate router resilience for upstream API traffic. The proxy now waits longer for upstream response headers and no longer labels every transport failure as a 503; timeouts are surfaced as 504 Gateway Timeout, while connection/handshake-type failures are surfaced as 502 Bad Gateway. A new test suite verifies the status classification, and the router test suite passes locally from the active workspace shell by cd-ing into the RouteGate repo.",
+      "affectedFiles": [
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport.go",
+          "action": "modified",
+          "reason": "Extended upstream response-header timeout so slower backends have more time before the router fails the request.",
+          "notes": "ResponseHeaderTimeout increased to 60s; connect/TLS remain 10s and expect-continue remains 5s."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler.go",
+          "action": "modified",
+          "reason": "Changed proxy error handling to classify upstream failures into 502 vs 504 and route them through the new unavailable-page response path.",
+          "notes": "Added classifyUpstreamError helper and improved logging with status codes."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\maintenance_page.go",
+          "action": "modified",
+          "reason": "Made the upstream-failure HTML page dynamic so it can render the actual returned status code and status text instead of always showing a 503 page.",
+          "notes": "Adds Retry-After for gateway timeouts."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\handler_error_test.go",
+          "action": "created",
+          "reason": "Added focused tests to verify timeout errors map to 504 and connection failures map to 502.",
+          "notes": "Covers the new error classification behavior."
+        },
+        {
+          "path": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router\\internal\\proxy\\transport_test.go",
+          "action": "inspected",
+          "reason": "Verified the upstream transport timeout tests remain aligned with the new timeout constants.",
+          "notes": "No code changes required after the timeout update."
+        }
+      ],
+      "createdAt": "2026-05-27T06:44:28.710Z",
+      "updatedAt": "2026-05-27T06:44:28.710Z"
     }
   ],
   "edges": [
@@ -136,7 +414,203 @@
       "relation": "parent",
       "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
       "createdAt": "2026-05-27T04:08:16.295Z"
+    },
+    {
+      "fromMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "toMemoryId": "cb625993-43c0-4893-9389-7bb4750e7e3a",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.408Z"
+    },
+    {
+      "fromMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.408Z"
+    },
+    {
+      "fromMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.408Z"
+    },
+    {
+      "fromMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "toMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.408Z"
+    },
+    {
+      "fromMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "toMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.489Z"
+    },
+    {
+      "fromMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.489Z"
+    },
+    {
+      "fromMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.489Z"
+    },
+    {
+      "fromMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "toMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.489Z"
+    },
+    {
+      "fromMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "toMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.563Z"
+    },
+    {
+      "fromMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.563Z"
+    },
+    {
+      "fromMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T05:54:16.563Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "61c17bf1-bad5-4843-9ec6-b343c8515a1d",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "toMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.508Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "028a6469-3a9d-419e-adb8-09309adcdee3",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "toMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "relation": "child",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.606Z"
+    },
+    {
+      "fromMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "toMemoryId": "a578a85c-c28d-43e1-91a7-65d93ef8088d",
+      "relation": "parent",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.710Z"
+    },
+    {
+      "fromMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "toMemoryId": "cdc54a65-9c90-49fb-80fd-2110d1b52012",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.710Z"
+    },
+    {
+      "fromMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "toMemoryId": "0349878e-80d0-4371-9965-a2d683cf8810",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.710Z"
+    },
+    {
+      "fromMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "toMemoryId": "0a50a6a7-e981-42fd-9e76-49caf649ce22",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.710Z"
+    },
+    {
+      "fromMemoryId": "e11d2b78-6b80-4495-8eb8-36aa078a590d",
+      "toMemoryId": "fa9aa59f-60c5-4176-a27c-594a9dd387bf",
+      "relation": "related",
+      "projectPath": "C:\\Users\\Administrator\\Desktop\\RouteGate\\router",
+      "createdAt": "2026-05-27T06:44:28.710Z"
     }
   ],
-  "updatedAt": "2026-05-27T04:08:16.296Z"
+  "updatedAt": "2026-05-27T06:44:28.711Z"
 }
